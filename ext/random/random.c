@@ -429,10 +429,10 @@ static uint64_t combinedlcg_generate(void *state) {
 	int32_t q, z;
 	php_random_numbergenerator_state_combinedlcg *s = (php_random_numbergenerator_state_combinedlcg *) state;
 
-	MODMULT(53668, 40014, 12211, 2147483563L, s->s1);
-	MODMULT(52774, 40692, 3791, 2147483399L, s->s2);
+	MODMULT(53668, 40014, 12211, 2147483563L, s->s[0]);
+	MODMULT(52774, 40692, 3791, 2147483399L, s->s[1]);
 
-	z = s->s1 - s->s2;
+	z = s->s[0] - s->s[1];
 	if (z < 1) {
 		z += 2147483562;
 	}
@@ -443,8 +443,8 @@ static uint64_t combinedlcg_generate(void *state) {
 static void combinedlcg_seed(void *state, const uint64_t seed) {
 	php_random_numbergenerator_state_combinedlcg *s = (php_random_numbergenerator_state_combinedlcg *) state;
 
-	s->s1 = seed & 0xffffffffU; /* upper 32bit */
-	s->s2 = seed >> 32; /* lower 32bit */
+	s->s[0] = seed & 0xffffffffU; /* upper 32bit */
+	s->s[1] = seed >> 32; /* lower 32bit */
 }
 
 static void combinedlcg_seed_default(php_random_numbergenerator_state_combinedlcg *state)
@@ -452,31 +452,32 @@ static void combinedlcg_seed_default(php_random_numbergenerator_state_combinedlc
 	struct timeval tv;
 
 	if (gettimeofday(&tv, NULL) == 0) {
-		state->s1 = tv.tv_usec ^ (tv.tv_usec << 11);
+		state->s[0] = tv.tv_usec ^ (tv.tv_usec << 11);
 	} else {
-		state->s1 = 1;
+		state->s[0] = 1;
 	}
 
 #ifdef ZTS
-	state->s2 = (zend_long) tsrm_thread_id();
+	state->s[1] = (zend_long) tsrm_thread_id();
 #else
-	state->s2 = (zend_long) getpid();
+	state->s[1] = (zend_long) getpid();
 #endif
 
 	/* Add entropy to s2 by calling gettimeofday() again */
 	if (gettimeofday(&tv, NULL) == 0) {
-		state->s2 ^= (tv.tv_usec << 11);
+		state->s[1] ^= (tv.tv_usec << 11);
 	}
 }
 
 static int combinedlcg_serialize(void *state, HashTable *data) {
 	php_random_numbergenerator_state_combinedlcg *s = (php_random_numbergenerator_state_combinedlcg *)state;
 	zval tmp;
+	int i;
 
-	ZVAL_LONG(&tmp, s->s1);
-	zend_hash_next_index_insert(data, &tmp);
-	ZVAL_LONG(&tmp, s->s2);
-	zend_hash_next_index_insert(data, &tmp);
+	for (i = 0; i < 2; i++) {
+		ZVAL_LONG(&tmp, s->s[i]);
+		zend_hash_next_index_insert(data, &tmp);
+	}
 
 	return SUCCESS;
 }
@@ -484,18 +485,15 @@ static int combinedlcg_serialize(void *state, HashTable *data) {
 static int combinedlcg_unserialize(void *state, HashTable *data) {
 	php_random_numbergenerator_state_combinedlcg *s = (php_random_numbergenerator_state_combinedlcg *)state;
 	zval *tmp;
+	int i;
 
-	tmp = zend_hash_index_find(data, 0);
-	if (Z_TYPE_P(tmp) != IS_LONG) {
-		return FAILURE;
+	for (i = 0; i < 2; i++) {
+		tmp = zend_hash_index_find(data, i);
+		if (Z_TYPE_P(tmp) != IS_LONG) {
+			return FAILURE;
+		}
+		s->s[i] = Z_LVAL_P(tmp);
 	}
-	s->s1 = Z_LVAL_P(tmp);
-
-	tmp = zend_hash_index_find(data, 1);
-	if (Z_TYPE_P(tmp) != IS_LONG) {
-		return FAILURE;
-	}
-	s->s2 = Z_LVAL_P(tmp);
 
 	return SUCCESS;
 }
