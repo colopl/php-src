@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: aa2b26d24f1bd05cc3c41327c745e66064b621b7 */
+ * Stub hash: b4333ed9abad25be1f9cd5242ce5515d8c2e1c6c */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -248,7 +248,7 @@ static zend_class_entry *register_class_Random_Randomizer(void)
 	zval property_numberGenerator_default_value;
 	ZVAL_UNDEF(&property_numberGenerator_default_value);
 	zend_string *property_numberGenerator_name = zend_string_init("numberGenerator", sizeof("numberGenerator") - 1, 1);
-	zend_declare_typed_property(class_entry, property_numberGenerator_name, &property_numberGenerator_default_value, ZEND_ACC_PRIVATE, NULL, (zend_type) ZEND_TYPE_INIT_CLASS(property_numberGenerator_class_Random_NumberGenerator, 0, 0));
+	zend_declare_typed_property(class_entry, property_numberGenerator_name, &property_numberGenerator_default_value, ZEND_ACC_PUBLIC|ZEND_ACC_READONLY, NULL, (zend_type) ZEND_TYPE_INIT_CLASS(property_numberGenerator_class_Random_NumberGenerator, 0, 0));
 	zend_string_release(property_numberGenerator_name);
 
 	return class_entry;
