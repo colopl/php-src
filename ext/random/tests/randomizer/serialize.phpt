@@ -1,5 +1,5 @@
 --TEST--
-Random: Randomizer: 
+Random: Randomizer: serialize
 --FILE--
 <?php
 
@@ -8,6 +8,7 @@ $generators[] = new Random\NumberGenerator\XorShift128Plus(\random_int(\PHP_INT_
 $generators[] = new Random\NumberGenerator\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
 $generators[] = new Random\NumberGenerator\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
 $generators[] = new Random\NumberGenerator\CombinedLCG(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
+$generators[] = new Random\NumberGenerator\Secure(); 
 $generators[] = new class () implements Random\NumberGenerator {
     private int $count = 0;
 
@@ -51,6 +52,7 @@ Random\NumberGenerator\XorShift128Plus: success
 Random\NumberGenerator\MersenneTwister: success
 Random\NumberGenerator\MersenneTwister: success
 Random\NumberGenerator\CombinedLCG: success
+Serialization of 'Random\NumberGenerator\Secure' is not allowed
 Serialization of 'Random\NumberGenerator@anonymous' is not allowed
 UserNumberGenerator: success
 success

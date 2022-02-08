@@ -1,5 +1,5 @@
 --TEST--
-Random: Randomizer: 
+Random: Randomizer: basic
 --FILE--
 <?php
 
