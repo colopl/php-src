@@ -144,14 +144,13 @@ typedef struct _php_random_numbergenerator_state_xorshift128plus {
 } php_random_numbergenerator_state_xorshift128plus;
 
 typedef struct _php_random_numbergenerator_state_mersennetwister {
-	uint32_t s[MT_N + 1];
+	uint32_t s[MT_N];
 	int cnt;
 	zend_long mode;
 } php_random_numbergenerator_state_mersennetwister;
 
 typedef struct _php_random_numbergenerator_state_combinedlcg {
-	int32_t s1;
-	int32_t s2;
+	int32_t s[2];
 } php_random_numbergenerator_state_combinedlcg;
 
 typedef struct _php_random_numbergenerator_state_user {
