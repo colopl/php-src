@@ -88,7 +88,7 @@ namespace Random
     {
         private NumberGenerator $numberGenerator;
 
-        public function __construct(private ?NumberGenerator $numberGenerator = null) {}
+        public function __construct(?NumberGenerator $numberGenerator = null) {}
 
         public function getInt(int $min, int $max): int {}
 
