@@ -385,7 +385,7 @@ static int mersennetwister_serialize(void *state, HashTable *data) {
 	zval tmp;
 	int i;
 
-	for (i = 0; i< MT_N + 1; i++) {
+	for (i = 0; i< MT_N; i++) {
 		ZVAL_LONG(&tmp, s->s[i]);
 		zend_hash_next_index_insert(data, &tmp);
 	}
@@ -400,7 +400,7 @@ static int mersennetwister_unserialize(void *state, HashTable *data) {
 	zval *tmp;
 	int i;
 
-	for (i = 0; i < MT_N + 1; i++) {
+	for (i = 0; i < MT_N; i++) {
 		tmp = zend_hash_index_find(data, i);
 		if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
 			return FAILURE;
@@ -408,7 +408,7 @@ static int mersennetwister_unserialize(void *state, HashTable *data) {
 
 		s->s[i] = Z_LVAL_P(tmp);
 	}
-	tmp = zend_hash_index_find(data, MT_N + 1);
+	tmp = zend_hash_index_find(data, MT_N);
 	if (Z_TYPE_P(tmp) != IS_LONG) {
 		return FAILURE;
 	}
@@ -658,7 +658,7 @@ PHPAPI double php_combined_lcg(void)
 PHPAPI void php_mt_srand(uint32_t seed)
 {
 	/* Seed the generator with a simple uint32 */
-	mersennetwister_seed(RANDOM_G(mt).s, (zend_long) seed);
+	mersennetwister_seed(&RANDOM_G(mt), (zend_long) seed);
 
 	/* Seed only once */
 	RANDOM_G(mt_seeded) = 1;
@@ -1141,7 +1141,7 @@ PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __unserialize)
 		zend_throw_exception(NULL, "Incomplete or ill-formed serialization data", 0);
 		RETURN_THROWS();
 	}
-	object_properties_load(Z_OBJ_P(ZEND_THIS), Z_ARRVAL_P(tmp));
+	object_properties_load(&generator->std, Z_ARRVAL_P(tmp));
 
 	/* state */
 	tmp = zend_hash_index_find(data, 1);
@@ -1201,7 +1201,7 @@ PHP_METHOD(Random_Randomizer, __construct)
 	/* Create default RNG instance */
 	if (!generator_object) {
 		zval zseed;
-		zend_long seed;
+		zend_long seed = 0;
 
 		if (php_random_bytes_throw(&seed, sizeof(zend_long) == FAILURE)) {
 			RETURN_THROWS();
@@ -1421,6 +1421,8 @@ PHP_MINIT_FUNCTION(random)
 	REGISTER_LONG_CONSTANT("MT_RAND_PHP",     MT_RAND_PHP, CONST_CS | CONST_PERSISTENT);
 
 	RANDOM_G(random_fd) = -1;
+    memset(&RANDOM_G(mt), 0, sizeof(php_random_numbergenerator_state_mersennetwister));
+    memset(&RANDOM_G(clcg), 0, sizeof(php_random_numbergenerator_state_combinedlcg));
 
 	return SUCCESS;
 }
