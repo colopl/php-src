@@ -442,13 +442,9 @@ static uint64_t combinedlcg_generate(void *state) {
 
 static void combinedlcg_seed(void *state, const uint64_t seed) {
 	php_random_numbergenerator_state_combinedlcg *s = (php_random_numbergenerator_state_combinedlcg *) state;
-	int32_t lsb, msb;
 
-	lsb = seed & 0xffffffff;
-	msb = seed >> 32;
-
-	s->s1 = lsb;
-	s->s2 = msb;
+	s->s1 = seed & 0xffffffffU; /* upper 32bit */
+	s->s2 = seed >> 32; /* lower 32bit */
 }
 
 static void combinedlcg_seed_default(php_random_numbergenerator_state_combinedlcg *state)
@@ -1100,11 +1096,6 @@ PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __serialize)
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
-	if (!generator->algo->serialize) {
-		zend_throw_exception(NULL, "NumberGenrator does not support serialize", 0);
-		RETURN_THROWS();
-	}
-
 	array_init(return_value);
 
 	/* members */
@@ -1125,11 +1116,6 @@ PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __unserialize)
 	php_random_numbergenerator *generator = Z_RANDOM_NUMBERGENERATOR_P(ZEND_THIS);
 	HashTable *data;
 	zval *tmp;
-
-	if (!generator->algo->unserialize) {
-		zend_throw_exception(NULL, "NumberGenerator does not support unserialize", 0);
-		RETURN_THROWS();
-	}
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_ARRAY_HT(data);
