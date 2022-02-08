@@ -1,5 +1,7 @@
 --TEST--
-Random: NumberGenerator: XorShift128Plus: value
+Random: NumberGenerator: XorShift128Plus: value (64-bit)
+--SKIPIF--
+<?php if (PHP_INT_SIZE < 8) { die("skip this test is for 64-bit platform only"); } ?>
 --FILE--
 <?php
 
