@@ -86,7 +86,7 @@ namespace Random
 
     final class Randomizer
     {
-        private NumberGenerator $numberGenerator;
+        public readonly NumberGenerator $numberGenerator;
 
         public function __construct(?NumberGenerator $numberGenerator = null) {}
 
