@@ -1,5 +1,5 @@
 --TEST--
-Random: NumberGenerator: XorShift128Plus: value (64-bit)
+Random: NumberGenerator: XorShift128Plus: value (32-bit)
 --SKIPIF--
 <?php if (PHP_INT_SIZE != 4) { die("skip this test is for 32-bit platform only"); } ?>
 --FILE--
