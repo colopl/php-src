@@ -6,7 +6,7 @@ Random: NumberGenerator: MersenneTwister: value
 $mt = new Random\NumberGenerator\MersenneTwister(1234, \MT_RAND_MT19937);
 
 for ($i = 0; $i < 1000; $i++) {
-    echo (($mt->generate() << 1) & PHP_INT_MAX) . PHP_EOL;
+    echo (($mt->generate() >> 1) & PHP_INT_MAX) . PHP_EOL;
 }
 
 ?>
