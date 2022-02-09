@@ -298,7 +298,7 @@ static int xorshift128plus_serialize(void *state, HashTable *data) {
 		zend_hash_next_index_insert(data, &tmp);
 	}
 
-	return FAILURE;
+	return SUCCESS;
 }
 
 static int xorshift128plus_unserialize(void *state, HashTable *data) {
@@ -315,7 +315,7 @@ static int xorshift128plus_unserialize(void *state, HashTable *data) {
 		s->s[i] = strtoull(ZSTR_VAL(Z_STR_P(tmp)), NULL, 10);
 	}
 
-	return FAILURE;
+	return SUCCESS;
 }
 
 static zend_object *php_random_numbergenerator_xorshift128plus_new(zend_class_entry *ce) {
@@ -1105,7 +1105,10 @@ PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __serialize)
 
 	/* state */
 	array_init(&tmp);
-	generator->algo->serialize(generator->state, Z_ARRVAL(tmp));
+	if (generator->algo->serialize(generator->state, Z_ARRVAL(tmp)) == FAILURE) {
+		zend_throw_exception(NULL, "NumberGenerator serialize failed", 0);
+		RETURN_THROWS();
+	}
 	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &tmp);
 }
 /* }}} */
@@ -1135,7 +1138,10 @@ PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __unserialize)
 		zend_throw_exception(NULL, "Incomplete or ill-formed serialization data", 0);
 		RETURN_THROWS();
 	}
-	generator->algo->unserialize(generator->state, Z_ARRVAL_P(tmp));
+	if (generator->algo->unserialize(generator->state, Z_ARRVAL_P(tmp)) == FAILURE) {
+		zend_throw_exception(NULL, "NumberGenerator unserialize failed", 0);
+		RETURN_THROWS();
+	}
 }
 /* }}} */
 
