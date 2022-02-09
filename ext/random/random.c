@@ -355,6 +355,15 @@ static uint64_t mersennetwister_generate(void *state) {
 	php_random_numbergenerator_state_mersennetwister *s = (php_random_numbergenerator_state_mersennetwister *)state;
 	uint32_t s1;
 
+	if (!s->seeded) {
+		zend_long bytes;
+		if (php_random_bytes_silent(&bytes, sizeof(zend_long)) == FAILURE) {
+			bytes = GENERATE_SEED();
+		}
+		php_mt_srand(bytes);
+	}
+
+
 	if (s->cnt >= MT_N) {
 		mersennetwister_reload(s);
 	}
@@ -378,6 +387,9 @@ static void mersennetwister_seed(void *state, const uint64_t seed) {
 		s->s[s->cnt] = (1812433253U * (s->s[s->cnt - 1] ^ (s->s[s->cnt - 1] >> 30)) + s->cnt) & 0xffffffffU;
 	}
 	mersennetwister_reload(s);
+
+	/* Seed only once */
+	s->seeded = 1;
 }
 
 static int mersennetwister_serialize(void *state, HashTable *data) {
@@ -445,6 +457,9 @@ static void combinedlcg_seed(void *state, const uint64_t seed) {
 
 	s->s[0] = seed & 0xffffffffU; /* upper 32bit */
 	s->s[1] = seed >> 32; /* lower 32bit */
+
+	/* Seed only once */
+	s->seeded = 1;
 }
 
 static void combinedlcg_seed_default(php_random_numbergenerator_state_combinedlcg *state)
@@ -467,6 +482,9 @@ static void combinedlcg_seed_default(php_random_numbergenerator_state_combinedlc
 	if (gettimeofday(&tv, NULL) == 0) {
 		state->s[1] ^= (tv.tv_usec << 11);
 	}
+
+	/* Seed only once */
+	state->seeded = 1;
 }
 
 static int combinedlcg_serialize(void *state, HashTable *data) {
@@ -637,11 +655,8 @@ static void php_random_randomizer_common_init(php_random_randomizer *randomizer,
 /* {{{ php_combined_lcg */
 PHPAPI double php_combined_lcg(void)
 {
-	if (!RANDOM_G(clcg_seeded)) {
+	if (!RANDOM_G(clcg).seeded) {
 		combinedlcg_seed_default(&RANDOM_G(clcg));
-
-		/* Seed only once */
-		RANDOM_G(clcg_seeded) = 1;
 	}
 
 	return php_random_numbergenerator_algo_combinedlcg.generate(&RANDOM_G(clcg)) * 4.656613e-10;
@@ -653,9 +668,6 @@ PHPAPI void php_mt_srand(uint32_t seed)
 {
 	/* Seed the generator with a simple uint32 */
 	mersennetwister_seed(&RANDOM_G(mt), (zend_long) seed);
-
-	/* Seed only once */
-	RANDOM_G(mt_seeded) = 1;
 }
 /* }}} */
 
@@ -878,16 +890,6 @@ PHPAPI const php_random_numbergenerator_algo *php_random_numbergenerator_get_def
 /* {{{ php_random_numbergenerater_get_default_state */
 PHPAPI void *php_random_numbergenerater_get_default_state(void)
 {
-	/* Pull a 32-bit integer from the generator state
-	   Every other access function simply transforms the numbers extracted here */
-	if (UNEXPECTED(!RANDOM_G(mt_seeded))) {
-		zend_long bytes;
-		if (php_random_bytes_silent(&bytes, sizeof(zend_long)) == FAILURE) {
-			bytes = GENERATE_SEED();
-		}
-		php_mt_srand(bytes);
-	}
-
 	return &RANDOM_G(mt);
 }
 /* }}} */
@@ -1430,10 +1432,6 @@ PHP_RINIT_FUNCTION(random)
 #if defined(ZTS) && defined(COMPILE_DL_RANDOM)
 	ZEND_TSRMLS_CACHE_UPDATE();
 #endif
-
-	RANDOM_G(clcg_seeded) = 0;
-	RANDOM_G(mt_seeded) = 0;
-
 	return SUCCESS;
 }
 /* }}} */
