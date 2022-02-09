@@ -147,10 +147,12 @@ typedef struct _php_random_numbergenerator_state_mersennetwister {
 	uint32_t s[MT_N];
 	int cnt;
 	zend_long mode;
+	bool seeded;
 } php_random_numbergenerator_state_mersennetwister;
 
 typedef struct _php_random_numbergenerator_state_combinedlcg {
 	int32_t s[2];
+	bool seeded;
 } php_random_numbergenerator_state_combinedlcg;
 
 typedef struct _php_random_numbergenerator_state_user {
@@ -176,9 +178,7 @@ PHP_RINIT_FUNCTION(random);
 
 ZEND_BEGIN_MODULE_GLOBALS(random)
 	php_random_numbergenerator_state_combinedlcg clcg;		/* Combined LCG global state */
-	bool clcg_seeded;										/* Combined LCG seed status */
 	php_random_numbergenerator_state_mersennetwister mt;	/* MT global state */
-	bool mt_seeded;											/* MT seed status */
 	int random_fd;											/* random file discriptor */
 ZEND_END_MODULE_GLOBALS(random)
 
