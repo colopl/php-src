@@ -403,6 +403,8 @@ static int mersennetwister_serialize(void *state, HashTable *data) {
 	}
 	ZVAL_LONG(&tmp, s->cnt);
 	zend_hash_next_index_insert(data, &tmp);
+	ZVAL_LONG(&tmp, s->seeded);
+	zend_hash_next_index_insert(data, &tmp);
 
 	return SUCCESS;
 }
@@ -420,11 +422,16 @@ static int mersennetwister_unserialize(void *state, HashTable *data) {
 
 		s->s[i] = Z_LVAL_P(tmp);
 	}
-	tmp = zend_hash_index_find(data, MT_N);
-	if (Z_TYPE_P(tmp) != IS_LONG) {
+	tmp = zend_hash_index_find(data, MT_N); /* cnt */
+	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
 		return FAILURE;
 	}
 	s->cnt = Z_LVAL_P(tmp);
+	tmp = zend_hash_index_find(data, MT_N + 1); /* seeded */
+	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
+		return FAILURE;
+	}
+	s->seeded = Z_LVAL_P(tmp);
 
 	return SUCCESS;
 }
@@ -496,6 +503,8 @@ static int combinedlcg_serialize(void *state, HashTable *data) {
 		ZVAL_LONG(&tmp, s->s[i]);
 		zend_hash_next_index_insert(data, &tmp);
 	}
+	ZVAL_LONG(&tmp, s->seeded);
+	zend_hash_next_index_insert(data, &tmp);
 
 	return SUCCESS;
 }
@@ -512,6 +521,11 @@ static int combinedlcg_unserialize(void *state, HashTable *data) {
 		}
 		s->s[i] = Z_LVAL_P(tmp);
 	}
+	tmp = zend_hash_index_find(data, 2);
+	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
+		return FAILURE;
+	}
+	s->seeded = Z_LVAL_P(tmp);
 
 	return SUCCESS;
 }
