@@ -189,7 +189,9 @@ static uint64_t rand_range64(const php_random_numbergenerator_algo *algo, void *
 	uint64_t result, limit;
 
 	result = algo->generate(state);
-	result = (result << 32) | algo->generate(state);
+	if (algo->generate_size < sizeof(uint64_t)) {
+		result = (result << 32) | algo->generate(state);
+	}
 
 	/* Special case where no modulus is required */
 	if (UNEXPECTED(umax == UINT64_MAX)) {
@@ -210,7 +212,9 @@ static uint64_t rand_range64(const php_random_numbergenerator_algo *algo, void *
 	/* Discard numbers over the limit to avoid modulo bias */
 	while (UNEXPECTED(result > limit)) {
 		result = algo->generate(state);
-		result = (result << 32) | algo->generate(state);
+		if (algo->generate_size < sizeof(uint64_t)) {
+			result = (result << 32) | algo->generate(state);
+		}
 	}
 
 	return result % umax;
@@ -695,15 +699,12 @@ PHPAPI uint32_t php_mt_rand(void)
 /* {{{ php_mt_rand_range */
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max)
 {
-	zend_ulong umax = max - min;
-
-#if ZEND_ULONG_MAX > UINT32_MAX
-	if (umax > UINT32_MAX) {
-		return (zend_long) (rand_range64(php_random_numbergenerator_get_default_algo(), php_random_numbergenerater_get_default_state(), umax) + min);
-	}
-#endif
-
-	return (zend_long) (rand_range32(php_random_numbergenerator_get_default_algo(), php_random_numbergenerater_get_default_state(), umax) + min);
+	return php_random_numbergenerator_range(
+		php_random_numbergenerator_get_default_algo(),
+		php_random_numbergenerater_get_default_state(),
+		min,
+		max
+	);
 }
 /* }}} */
 
@@ -912,6 +913,10 @@ PHPAPI void *php_random_numbergenerater_get_default_state(void)
 PHPAPI zend_long php_random_numbergenerator_range(const php_random_numbergenerator_algo *algo, void *state, zend_long min, zend_long max)
 {
 	zend_ulong umax = max - min;
+
+	if (algo->generate_size == sizeof(uint64_t)) {
+		return (zend_long) rand_range64(algo, state, umax) + min;
+	}
 
 #if ZEND_ULONG_MAX > UINT32_MAX
 	if (umax > UINT32_MAX) {
