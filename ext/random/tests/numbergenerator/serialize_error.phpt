@@ -1,5 +1,5 @@
 --TEST--
-Random: NumberGenerator: serialize
+Random: NumberGenerator: serialize error pattern
 --FILE--
 <?php
 
@@ -94,30 +94,28 @@ foreach ($generators as $generator) {
         continue;
     }
 
-    $unserialized_generator = \unserialize($serialized_generator);
+    $broken_serialized_generator = preg_replace('/a\:[0-9]+\:\{.*?\}/', 'a:0:{}', $serialized_generator);
 
-    echo $generator::class . ': ';
-    if ($generator->generate() === $unserialized_generator->generate()) {
-        echo "success\n";
-    } else {
-        echo "failure\n";
+    try {
+        $unserialized_generator = \unserialize($broken_serialized_generator);
+    } catch (Throwable $e) {
+        echo $generator::class . ': ' . $e->getMessage() . PHP_EOL;
     }
 }
 
 ?>
 --EXPECTF--
-Random\NumberGenerator\XorShift128Plus: success
-Random\NumberGenerator\MersenneTwister: success
-Random\NumberGenerator\MersenneTwister: success
-Random\NumberGenerator\CombinedLCG: success
+Random\NumberGenerator\XorShift128Plus: NumberGenerator unserialize failed
+Random\NumberGenerator\MersenneTwister: NumberGenerator unserialize failed
+Random\NumberGenerator\MersenneTwister: NumberGenerator unserialize failed
+Random\NumberGenerator\CombinedLCG: NumberGenerator unserialize failed
 Serialization of 'Random\NumberGenerator\Secure' is not allowed
 Serialization of 'Random\NumberGenerator@anonymous' is not allowed
-UserNumberGenerator: success
 Serialization of 'Random\NumberGenerator\XorShift128Plus@anonymous' is not allowed
-UserXorShift128Plus: success
+UserXorShift128Plus: NumberGenerator unserialize failed
 Serialization of 'Random\NumberGenerator\MersenneTwister@anonymous' is not allowed
-UserMersenneTwister: success
+UserMersenneTwister: NumberGenerator unserialize failed
 Serialization of 'Random\NumberGenerator\CombinedLCG@anonymous' is not allowed
-UserCombinedLCG: success
+UserCombinedLCG: NumberGenerator unserialize failed
 Serialization of 'Random\NumberGenerator\Secure@anonymous' is not allowed
 Serialization of 'UserSecure' is not allowed
