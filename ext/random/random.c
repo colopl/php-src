@@ -1427,8 +1427,8 @@ PHP_MINIT_FUNCTION(random)
 	REGISTER_LONG_CONSTANT("MT_RAND_PHP",     MT_RAND_PHP, CONST_CS | CONST_PERSISTENT);
 
 	RANDOM_G(random_fd) = -1;
-    memset(&RANDOM_G(mt), 0, sizeof(php_random_numbergenerator_state_mersennetwister));
-    memset(&RANDOM_G(clcg), 0, sizeof(php_random_numbergenerator_state_combinedlcg));
+	memset(&RANDOM_G(mt), 0, sizeof(php_random_numbergenerator_state_mersennetwister));
+	memset(&RANDOM_G(clcg), 0, sizeof(php_random_numbergenerator_state_combinedlcg));
 
 	return SUCCESS;
 }
