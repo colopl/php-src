@@ -282,7 +282,7 @@ static uint64_t xorshift128plus_generate(void *state) {
 
 static void xorshift128plus_seed(void *state, const uint64_t seed) {
 	php_random_numbergenerator_state_xorshift128plus *s = (php_random_numbergenerator_state_xorshift128plus *)state;
-	uint64_t sd = (uint64_t) seed;
+	uint64_t sd = seed;
 
 	s->s[0] = xorshift128plus_splitmix64(&sd);
 	s->s[1] = xorshift128plus_splitmix64(&sd);
@@ -372,7 +372,7 @@ static uint64_t mersennetwister_generate(void *state) {
 	s1 ^= (s1 >> 11);
 	s1 ^= (s1 << 7) & 0x9d2c5680U;
 	s1 ^= (s1 << 15) & 0xefc60000U;
-	return (s1 ^ (s1 >> 18));
+	return (uint64_t) (s1 ^ (s1 >> 18));
 }
 
 static void mersennetwister_seed(void *state, const uint64_t seed) {
@@ -456,7 +456,7 @@ static uint64_t combinedlcg_generate(void *state) {
 		z += 2147483562;
 	}
 
-	return z;
+	return (uint64_t) z;
 }
 
 static void combinedlcg_seed(void *state, const uint64_t seed) {
@@ -560,7 +560,7 @@ static uint64_t user_generate(void *state) {
 
 	zend_call_known_instance_method_with_0_params(s->method, s->object, &retval);
 
-	return Z_LVAL(retval);
+	return (uint64_t) Z_LVAL(retval);
 }
 
 /* User end */
