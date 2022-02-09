@@ -507,7 +507,7 @@ static int combinedlcg_unserialize(void *state, HashTable *data) {
 
 	for (i = 0; i < 2; i++) {
 		tmp = zend_hash_index_find(data, i);
-		if (Z_TYPE_P(tmp) != IS_LONG) {
+		if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
 			return FAILURE;
 		}
 		s->s[i] = Z_LVAL_P(tmp);
