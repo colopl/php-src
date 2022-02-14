@@ -393,7 +393,7 @@ static void mersennetwister_seed(void *state, const uint64_t seed) {
 	mersennetwister_reload(s);
 
 	/* Seed only once */
-	s->seeded = 1;
+	s->seeded = true;
 }
 
 static int mersennetwister_serialize(void *state, HashTable *data) {
@@ -466,11 +466,11 @@ static uint64_t combinedlcg_generate(void *state) {
 static void combinedlcg_seed(void *state, const uint64_t seed) {
 	php_random_numbergenerator_state_combinedlcg *s = (php_random_numbergenerator_state_combinedlcg *) state;
 
-	s->s[0] = seed & 0xffffffffU; /* upper 32bit */
-	s->s[1] = seed >> 32; /* lower 32bit */
+	s->s[0] = seed & 0xffffffffU;
+	s->s[1] = seed >> 32;
 
 	/* Seed only once */
-	s->seeded = 1;
+	s->seeded = true;
 }
 
 static void combinedlcg_seed_default(php_random_numbergenerator_state_combinedlcg *state)
@@ -495,7 +495,7 @@ static void combinedlcg_seed_default(php_random_numbergenerator_state_combinedlc
 	}
 
 	/* Seed only once */
-	state->seeded = 1;
+	state->seeded = true;
 }
 
 static int combinedlcg_serialize(void *state, HashTable *data) {
