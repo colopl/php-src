@@ -1164,6 +1164,27 @@ PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __unserialize)
 }
 /* }}} */
 
+/* {{{ DebugInfo */
+PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __debugInfo)
+{
+	php_random_numbergenerator *generator = Z_RANDOM_NUMBERGENERATOR_P(ZEND_THIS);
+	zval tmp;
+
+	if (!generator->std.properties) {
+		rebuild_object_properties(&generator->std);
+	}
+	ZVAL_ARR(return_value, zend_array_dup(generator->std.properties));
+
+	if (generator->algo->serialize) {
+		array_init(&tmp);
+		if (generator->algo->serialize(generator->state, Z_ARRVAL(tmp)) == FAILURE) {
+			zend_throw_exception(NULL, "NumberGenerator serialize failed", 0);
+			RETURN_THROWS();
+		}
+		zend_hash_str_add(Z_ARR_P(return_value), "__states", sizeof("__states") - 1, &tmp);
+	}
+}
+
 /* {{{ Construct object */
 PHP_METHOD(Random_NumberGenerator_MersenneTwister, __construct)
 {
