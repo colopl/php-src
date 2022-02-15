@@ -1080,18 +1080,36 @@ PHP_FUNCTION(random_int)
 }
 /* }}} */
 
+void printb(unsigned int v) {
+  unsigned int mask = (int)1 << (sizeof(v) * CHAR_BIT - 1);
+  do putchar(mask & v ? '1' : '0');
+  while (mask >>= 1);
+  printf("\n");
+}
+
+
 /* {{{ Construct object */
 PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __construct)
 {
 	php_random_numbergenerator *generator = Z_RANDOM_NUMBERGENERATOR_P(ZEND_THIS);
-	zend_long seed;
+	php_random_numbergenerator_state_xorshift128plus *state = generator->state;
+	zend_string *str_seed = NULL;
+	zend_long int_seed = 0;
 	
 	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_LONG(seed)
+		Z_PARAM_STR_OR_LONG(str_seed, int_seed)
 	ZEND_PARSE_PARAMETERS_END();
-
-	if (generator->algo->seed) {
-		generator->algo->seed(generator->state, seed);
+	
+	if (str_seed) {
+		/* char (8 bit) * 16 = 128 bits */
+		if (str_seed->len == 16) {
+			memcpy(state->s, str_seed->val, 16);
+		}  else {
+			zend_argument_value_error(1, "state strings must be 16 bytes");
+			RETURN_THROWS();
+		}
+	} else {
+		generator->algo->seed(state, int_seed);
 	}
 }
 /* }}} */
@@ -1208,6 +1226,20 @@ PHP_METHOD(Random_NumberGenerator_MersenneTwister, __construct)
 		default:
 			state->mode = MT_RAND_MT19937;
 	}
+
+	generator->algo->seed(generator->state, seed);
+}
+/* }}} */
+
+/* {{{ Construct object */
+PHP_METHOD(Random_NumberGenerator_CombinedLCG, __construct)
+{
+	php_random_numbergenerator *generator = Z_RANDOM_NUMBERGENERATOR_P(ZEND_THIS);
+	zend_long seed;
+	
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_LONG(seed)
+	ZEND_PARSE_PARAMETERS_END();
 
 	generator->algo->seed(generator->state, seed);
 }
