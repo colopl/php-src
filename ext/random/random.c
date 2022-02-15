@@ -1186,6 +1186,7 @@ PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __debugInfo)
 		zend_hash_str_add(Z_ARR_P(return_value), "__states", sizeof("__states") - 1, &tmp);
 	}
 }
+/* }}} */
 
 /* {{{ Construct object */
 PHP_METHOD(Random_NumberGenerator_MersenneTwister, __construct)
