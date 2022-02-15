@@ -29,7 +29,7 @@ namespace Random\NumberGenerator
 {
     class XorShift128Plus implements Random\NumberGenerator
     {
-        public function __construct(int $seed) {}
+        public function __construct(string|int $seed) {}
 
         public function generate(): int {}
 
@@ -59,7 +59,6 @@ namespace Random\NumberGenerator
 
     class CombinedLCG implements Random\NumberGenerator
     {
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__construct */
         public function __construct(int $seed) {}
 
         /** @implementation-alias Random\NumberGenerator\XorShift128Plus::generate */
