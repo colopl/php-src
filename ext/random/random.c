@@ -1170,6 +1170,8 @@ PHP_METHOD(Random_NumberGenerator_XorShift128Plus, __debugInfo)
 	php_random_numbergenerator *generator = Z_RANDOM_NUMBERGENERATOR_P(ZEND_THIS);
 	zval tmp;
 
+	ZEND_PARSE_PARAMETERS_NONE();
+
 	if (!generator->std.properties) {
 		rebuild_object_properties(&generator->std);
 	}
