@@ -3,7 +3,9 @@ Random: Randomizer: readonly numbergenerator
 --FILE--
 <?php
 
-$one = new \Random\Randomizer();
+$one = new \Random\Randomizer(
+    new \Random\NumberGenerator\XorShift128Plus(1234)
+);
 
 $one_ng_clone = clone $one->numberGenerator;
 if ($one->numberGenerator->generate() !== $one_ng_clone->generate()) {

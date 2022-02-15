@@ -1235,21 +1235,11 @@ PHP_METHOD(Random_Randomizer, __construct)
 
 	/* Create default RNG instance */
 	if (!generator_object) {
-		zval zseed;
-		zend_long seed = 0;
-
-		if (php_random_bytes_throw(&seed, sizeof(zend_long) == FAILURE)) {
-			RETURN_THROWS();
-		}
-
-		ZVAL_LONG(&zseed, seed);
-
-		generator_object = php_random_numbergenerator_xorshift128plus_new(random_ce_Random_NumberGenerator_XorShift128Plus);
-		zend_call_known_instance_method_with_1_params(
+		generator_object = php_random_numbergenerator_secure_new(random_ce_Random_NumberGenerator_Secure);
+		zend_call_known_instance_method_with_0_params(
 			random_ce_Random_NumberGenerator_XorShift128Plus->constructor,
 			generator_object,
-			NULL,
-			&zseed
+			NULL
 		);
 
 		/* No need self-refcount */
