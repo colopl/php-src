@@ -36,6 +36,8 @@ namespace Random\NumberGenerator
         public function __serialize(): array {}
 
         public function __unserialize(array $data): void {}
+
+        public function __debugInfo(): array {}
     }
 
     class MersenneTwister implements Random\NumberGenerator
@@ -50,6 +52,9 @@ namespace Random\NumberGenerator
 
         /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__unserialize */
         public function __unserialize(array $data): void {}
+
+        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__debugInfo */
+        public function __debugInfo(): array {}
     }
 
     class CombinedLCG implements Random\NumberGenerator
@@ -65,6 +70,9 @@ namespace Random\NumberGenerator
 
         /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__unserialize */
         public function __unserialize(array $data): void {}
+
+        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__debugInfo */
+        public function __debugInfo(): array {}
     }
 
     /** @not-serializable */

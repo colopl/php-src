@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 7532fe839250b19de68e65d5f6c7ef308e96894e */
+ * Stub hash: b9fad07117f040bbb936fc2dd449c0babf0eee7a */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -45,6 +45,8 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_NumberGenerator_Xor
 	ZEND_ARG_TYPE_INFO(0, data, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
 
+#define arginfo_class_Random_NumberGenerator_XorShift128Plus___debugInfo arginfo_class_Random_NumberGenerator_XorShift128Plus___serialize
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_NumberGenerator_MersenneTwister___construct, 0, 0, 1)
 	ZEND_ARG_TYPE_INFO(0, seed, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, 0, "MT_RAND_MT19937")
@@ -56,6 +58,8 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_NumberGenerator_MersenneTwister___unserialize arginfo_class_Random_NumberGenerator_XorShift128Plus___unserialize
 
+#define arginfo_class_Random_NumberGenerator_MersenneTwister___debugInfo arginfo_class_Random_NumberGenerator_XorShift128Plus___serialize
+
 #define arginfo_class_Random_NumberGenerator_CombinedLCG___construct arginfo_class_Random_NumberGenerator_XorShift128Plus___construct
 
 #define arginfo_class_Random_NumberGenerator_CombinedLCG_generate arginfo_mt_getrandmax
@@ -63,6 +67,8 @@ ZEND_END_ARG_INFO()
 #define arginfo_class_Random_NumberGenerator_CombinedLCG___serialize arginfo_class_Random_NumberGenerator_XorShift128Plus___serialize
 
 #define arginfo_class_Random_NumberGenerator_CombinedLCG___unserialize arginfo_class_Random_NumberGenerator_XorShift128Plus___unserialize
+
+#define arginfo_class_Random_NumberGenerator_CombinedLCG___debugInfo arginfo_class_Random_NumberGenerator_XorShift128Plus___serialize
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_NumberGenerator_Secure___construct, 0, 0, 0)
 ZEND_END_ARG_INFO()
@@ -105,6 +111,7 @@ ZEND_METHOD(Random_NumberGenerator_XorShift128Plus, __construct);
 ZEND_METHOD(Random_NumberGenerator_XorShift128Plus, generate);
 ZEND_METHOD(Random_NumberGenerator_XorShift128Plus, __serialize);
 ZEND_METHOD(Random_NumberGenerator_XorShift128Plus, __unserialize);
+ZEND_METHOD(Random_NumberGenerator_XorShift128Plus, __debugInfo);
 ZEND_METHOD(Random_NumberGenerator_MersenneTwister, __construct);
 ZEND_METHOD(Random_NumberGenerator_Secure, __construct);
 ZEND_METHOD(Random_Randomizer, __construct);
@@ -135,6 +142,7 @@ static const zend_function_entry class_Random_NumberGenerator_XorShift128Plus_me
 	ZEND_ME(Random_NumberGenerator_XorShift128Plus, generate, arginfo_class_Random_NumberGenerator_XorShift128Plus_generate, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_NumberGenerator_XorShift128Plus, __serialize, arginfo_class_Random_NumberGenerator_XorShift128Plus___serialize, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_NumberGenerator_XorShift128Plus, __unserialize, arginfo_class_Random_NumberGenerator_XorShift128Plus___unserialize, ZEND_ACC_PUBLIC)
+	ZEND_ME(Random_NumberGenerator_XorShift128Plus, __debugInfo, arginfo_class_Random_NumberGenerator_XorShift128Plus___debugInfo, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
 };
 
@@ -144,6 +152,7 @@ static const zend_function_entry class_Random_NumberGenerator_MersenneTwister_me
 	ZEND_MALIAS(Random_NumberGenerator_XorShift128Plus, generate, generate, arginfo_class_Random_NumberGenerator_MersenneTwister_generate, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_NumberGenerator_XorShift128Plus, __serialize, __serialize, arginfo_class_Random_NumberGenerator_MersenneTwister___serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_NumberGenerator_XorShift128Plus, __unserialize, __unserialize, arginfo_class_Random_NumberGenerator_MersenneTwister___unserialize, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(Random_NumberGenerator_XorShift128Plus, __debugInfo, __debugInfo, arginfo_class_Random_NumberGenerator_MersenneTwister___debugInfo, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
 };
 
@@ -153,6 +162,7 @@ static const zend_function_entry class_Random_NumberGenerator_CombinedLCG_method
 	ZEND_MALIAS(Random_NumberGenerator_XorShift128Plus, generate, generate, arginfo_class_Random_NumberGenerator_CombinedLCG_generate, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_NumberGenerator_XorShift128Plus, __serialize, __serialize, arginfo_class_Random_NumberGenerator_CombinedLCG___serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_NumberGenerator_XorShift128Plus, __unserialize, __unserialize, arginfo_class_Random_NumberGenerator_CombinedLCG___unserialize, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(Random_NumberGenerator_XorShift128Plus, __debugInfo, __debugInfo, arginfo_class_Random_NumberGenerator_CombinedLCG___debugInfo, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
 };
 
