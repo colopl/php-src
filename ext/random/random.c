@@ -1351,7 +1351,7 @@ PHP_METHOD(Random_Randomizer, __construct)
 	if (!engine_object) {
 		engine_object = php_random_engine_secure_new(random_ce_Random_Engine_Secure);
 		zend_call_known_instance_method_with_0_params(
-			random_ce_Random_Engine_XorShift128Plus->constructor,
+			random_ce_Random_Engine_Secure->constructor,
 			engine_object,
 			NULL
 		);
