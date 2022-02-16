@@ -3,46 +3,52 @@ Random: Randomizer: basic
 --FILE--
 <?php
 
-$generators = [];
-$generators[] = new Random\NumberGenerator\XorShift128Plus(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
-$generators[] = new Random\NumberGenerator\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
-$generators[] = new Random\NumberGenerator\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
-$generators[] = new Random\NumberGenerator\CombinedLCG(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
-$generators[] = new Random\NumberGenerator\Secure(); 
-$generators[] = new class () implements Random\NumberGenerator {
-    private int $count = 0;
-
-    public function generate(): int
+$engines = [];
+$engines[] = new Random\Engine\XorShift128Plus(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
+$engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
+$engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
+$engines[] = new Random\Engine\CombinedLCG(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
+$engines[] = new Random\Engine\Secure(); 
+$engines[] = new class () implements Random\Engine {
+    public function nextByteSize(): int
     {
-        return ++$this->count;
+        return 8;
+    }
+
+    public function generate(): string
+    {
+        return \random_bytes(16);
     }
 };
-class UserNumberGenerator implements Random\NumberGenerator
+class UserEngine implements Random\Engine
 {
-    private int $count = 0;
-
-    public function generate(): int
+    public function nextByteSize(): int
     {
-        return ++$this->count;
+        return 8;
+    }
+
+    public function generate(): string
+    {
+        return \random_bytes(16);
     }
 }
-$generators[] = new UserNumberGenerator();
+$engines[] = new UserEngine();
 
-foreach ($generators as $generator) {
-    $randomizer = new Random\Randomizer($generator);
+foreach ($engines as $engine) {
+    $randomizer = new Random\Randomizer($engine);
 
     // getInt
     for ($i = 0; $i < 1000; $i++) {
         $result = $randomizer->getInt(-50, 50);
         if ($result > 50 || $result < -50) {
-            die($generator::class . ': getInt: failure');
+            die($engine::class . ': getInt: failure');
         }
     }
 
     // getBytes
     for ($i = 0; $i < 1000; $i++) {
         if (\strlen($randomizer->getBytes(1024)) !== 1024) {
-            die($generator::class . ': getBytes: failure.');
+            die($engine::class . ': getBytes: failure.');
         }
     }
 
@@ -56,14 +62,14 @@ foreach ($generators as $generator) {
             }
         }
 
-        die($generator::class . ': shuffleArray: failure.');
+        die($engine::class . ': shuffleArray: failure.');
     })();
 
     // shuffleString
     $string = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
     $shuffled_string = $randomizer->shuffleString($string);
     if ($string === $shuffled_string) {
-        die($generator::class . ': shuffleString: failure.');
+        die($engine::class . ': shuffleString: failure.');
     }
 }
 

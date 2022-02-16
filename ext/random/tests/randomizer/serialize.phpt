@@ -3,33 +3,39 @@ Random: Randomizer: serialize
 --FILE--
 <?php
 
-$generators = [];
-$generators[] = new Random\NumberGenerator\XorShift128Plus(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
-$generators[] = new Random\NumberGenerator\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
-$generators[] = new Random\NumberGenerator\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
-$generators[] = new Random\NumberGenerator\CombinedLCG(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
-$generators[] = new Random\NumberGenerator\Secure(); 
-$generators[] = new class () implements Random\NumberGenerator {
-    private int $count = 0;
-
-    public function generate(): int
+$engines = [];
+$engines[] = new Random\Engine\XorShift128Plus(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
+$engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
+$engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
+$engines[] = new Random\Engine\CombinedLCG(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
+$engines[] = new Random\Engine\Secure(); 
+$engines[] = new class () implements Random\Engine {
+    public function nextByteSize(): int
     {
-        return ++$this->count;
+        return 8;
+    }
+
+    public function generate(): string
+    {
+        return '�}Q��R';
     }
 };
-class UserNumberGenerator implements Random\NumberGenerator
+class UserEngine implements Random\Engine
 {
-    private int $count = 0;
-
-    public function generate(): int
+    public function nextByteSize(): int
     {
-        return ++$this->count;
+        return 8;
+    }
+
+    public function generate(): string
+    {
+        return '�}Q��R';
     }
 }
-$generators[] = new UserNumberGenerator();
+$engines[] = new UserEngine();
 
-foreach ($generators as $generator) {
-    $randomizer = new Random\Randomizer($generator);
+foreach ($engines as $engine) {
+    $randomizer = new Random\Randomizer($engine);
     $randomizer->getInt(\PHP_INT_MIN, \PHP_INT_MAX);
     try {
         $randomizer2 = unserialize(serialize($randomizer));
@@ -39,20 +45,20 @@ foreach ($generators as $generator) {
     }
 
     if ($randomizer->getInt(\PHP_INT_MIN, \PHP_INT_MAX) !== $randomizer2->getInt(\PHP_INT_MIN, \PHP_INT_MAX)) {
-        die($generator::class . ': failure.');
+        die($engine::class . ': failure.');
     }
 
-    echo $generator::class . ': success' . PHP_EOL;
+    echo $engine::class . ': success' . PHP_EOL;
 }
 
 die('success');
 ?>
 --EXPECTF--
-Random\NumberGenerator\XorShift128Plus: success
-Random\NumberGenerator\MersenneTwister: success
-Random\NumberGenerator\MersenneTwister: success
-Random\NumberGenerator\CombinedLCG: success
-Serialization of 'Random\NumberGenerator\Secure' is not allowed
-Serialization of 'Random\NumberGenerator@anonymous' is not allowed
-UserNumberGenerator: success
+Random\Engine\XorShift128Plus: success
+Random\Engine\MersenneTwister: success
+Random\Engine\MersenneTwister: success
+Random\Engine\CombinedLCG: success
+Serialization of 'Random\Engine\Secure' is not allowed
+Serialization of 'Random\Engine@anonymous' is not allowed
+UserEngine: success
 success
