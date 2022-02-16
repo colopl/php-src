@@ -188,7 +188,6 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 	while (UNEXPECTED(result > limit)) {
 		generated_size = algo->size(state);
 		result = algo->generate(state);
-		
 		while (generated_size < sizeof(uint32_t)) {
 			size_t generate_size = algo->size(state);
 
@@ -514,8 +513,7 @@ static void combinedlcg_seed(void *state, const uint64_t seed) {
 	s->seeded = true;
 }
 
-static void combinedlcg_seed_default(php_random_engine_state_combinedlcg *state)
-{
+static void combinedlcg_seed_default(php_random_engine_state_combinedlcg *state) {
 	struct timeval tv;
 
 	if (gettimeofday(&tv, NULL) == 0) {
