@@ -1,35 +1,35 @@
 --TEST--
-Random: Randomizer: readonly numbergenerator
+Random: Randomizer: readonly engine
 --FILE--
 <?php
 
 $one = new \Random\Randomizer(
-    new \Random\NumberGenerator\XorShift128Plus(1234)
+    new \Random\Engine\XorShift128Plus(1234)
 );
 
-$one_ng_clone = clone $one->numberGenerator;
-if ($one->numberGenerator->generate() !== $one_ng_clone->generate()) {
+$one_ng_clone = clone $one->engine;
+if ($one->engine->generate() !== $one_ng_clone->generate()) {
     die('invalid result');
 }
 
 try {
-    $one->numberGenerator = $one_ng_clone;
+    $one->engine = $one_ng_clone;
 } catch (\Throwable $e) {
     echo $e->getMessage() . PHP_EOL;
 }
 
 $two = new \Random\Randomizer(
-    new \Random\NumberGenerator\Secure()
+    new \Random\Engine\Secure()
 );
 
 try {
-    $two_ng_clone = clone $two->numberGenerator;
+    $two_ng_clone = clone $two->engine;
 } catch (\Throwable $e) {
     echo $e->getMessage() . PHP_EOL;
 }
 
 try {
-    $two->numberGenerator = $one_ng_clone;
+    $two->engine = $one_ng_clone;
 } catch (\Throwable $e) {
     echo $e->getMessage() . PHP_EOL;
 }
@@ -37,7 +37,7 @@ try {
 die('success')
 ?>
 --EXPECT--
-Cannot modify readonly property Random\Randomizer::$numberGenerator
-Trying to clone an uncloneable object of class Random\NumberGenerator\Secure
-Cannot modify readonly property Random\Randomizer::$numberGenerator
+Cannot modify readonly property Random\Randomizer::$engine
+Trying to clone an uncloneable object of class Random\Engine\Secure
+Cannot modify readonly property Random\Randomizer::$engine
 success

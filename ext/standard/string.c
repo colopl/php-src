@@ -5734,7 +5734,7 @@ PHP_FUNCTION(str_rot13)
 }
 /* }}} */
 
-PHPAPI void php_string_shuffle(const php_random_numbergenerator_algo *algo, void *state, char *str, zend_long len) /* {{{ */
+PHPAPI void php_string_shuffle(const php_random_engine_algo *algo, void *state, char *str, zend_long len) /* {{{ */
 {
 	zend_long n_elems, rnd_idx, n_left;
 	char temp;
@@ -5749,7 +5749,7 @@ PHPAPI void php_string_shuffle(const php_random_numbergenerator_algo *algo, void
 	n_left = n_elems;
 
 	while (--n_left) {
-		rnd_idx = php_random_numbergenerator_range(algo, state, 0, n_left);
+		rnd_idx = php_random_engine_range(algo, state, 0, n_left);
 		if (rnd_idx != n_left) {
 			temp = str[n_left];
 			str[n_left] = str[rnd_idx];
@@ -5771,8 +5771,8 @@ PHP_FUNCTION(str_shuffle)
 	RETVAL_STRINGL(ZSTR_VAL(arg), ZSTR_LEN(arg));
 	if (Z_STRLEN_P(return_value) > 1) {
 		php_string_shuffle(
-			php_random_numbergenerator_get_default_algo(), 
-			php_random_numbergenerater_get_default_state(), 
+			php_random_engine_get_default_algo(), 
+			php_random_engine_get_default_state(), 
 			Z_STRVAL_P(return_value), 
 			Z_STRLEN_P(return_value)
 		);

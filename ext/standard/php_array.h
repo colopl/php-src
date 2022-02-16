@@ -31,7 +31,7 @@ PHPAPI int php_array_replace_recursive(HashTable *dest, HashTable *src);
 PHPAPI int php_multisort_compare(const void *a, const void *b);
 PHPAPI zend_long php_count_recursive(HashTable *ht);
 
-PHPAPI void php_array_data_shuffle(const php_random_numbergenerator_algo *algo, void *state, zval *array);
+PHPAPI void php_array_data_shuffle(const php_random_engine_algo *algo, void *state, zval *array);
 
 #define PHP_SORT_REGULAR            0
 #define PHP_SORT_NUMERIC            1

@@ -25,13 +25,15 @@ namespace {
     function random_int(int $min, int $max): int {}
 }
 
-namespace Random\NumberGenerator
+namespace Random\Engine
 {
-    class XorShift128Plus implements Random\NumberGenerator
+    class XorShift128Plus implements Random\Engine
     {
         public function __construct(string|int $seed) {}
 
-        public function generate(): int {}
+        public function nextByteSize(): int {}
+
+        public function generate(): string {}
 
         public function __serialize(): array {}
 
@@ -40,64 +42,75 @@ namespace Random\NumberGenerator
         public function __debugInfo(): array {}
     }
 
-    class MersenneTwister implements Random\NumberGenerator
+    class MersenneTwister implements Random\Engine
     {
         public function __construct(int $seed, int $mode = MT_RAND_MT19937) {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::generate */
-        public function generate(): int {}
+        /** @implementation-alias Random\Engine\XorShift128Plus::nextByteSize */
+        public function nextByteSize(): int {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__serialize */
+        /** @implementation-alias Random\Engine\XorShift128Plus::generate */
+        public function generate(): string {}
+
+        /** @implementation-alias Random\Engine\XorShift128Plus::__serialize */
         public function __serialize(): array {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__unserialize */
+        /** @implementation-alias Random\Engine\XorShift128Plus::__unserialize */
         public function __unserialize(array $data): void {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__debugInfo */
+        /** @implementation-alias Random\Engine\XorShift128Plus::__debugInfo */
         public function __debugInfo(): array {}
     }
 
-    class CombinedLCG implements Random\NumberGenerator
+    class CombinedLCG implements Random\Engine
     {
         public function __construct(int $seed) {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::generate */
-        public function generate(): int {}
+        /** @implementation-alias Random\Engine\XorShift128Plus::nextByteSize */
+        public function nextByteSize(): int {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__serialize */
+        /** @implementation-alias Random\Engine\XorShift128Plus::generate */
+        public function generate(): string {}
+
+        /** @implementation-alias Random\Engine\XorShift128Plus::__serialize */
         public function __serialize(): array {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__unserialize */
+        /** @implementation-alias Random\Engine\XorShift128Plus::__unserialize */
         public function __unserialize(array $data): void {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::__debugInfo */
+        /** @implementation-alias Random\Engine\XorShift128Plus::__debugInfo */
         public function __debugInfo(): array {}
     }
 
     /** @not-serializable */
-    class Secure implements Random\NumberGenerator
+    class Secure implements Random\Engine
     {
         public function __construct() {}
 
-        /** @implementation-alias Random\NumberGenerator\XorShift128Plus::generate */
-        public function generate(): int {}
+        /** @implementation-alias Random\Engine\XorShift128Plus::nextByteSize */
+        public function nextByteSize(): int {}
+
+        /** @implementation-alias Random\Engine\XorShift128Plus::generate */
+        public function generate(): string {}
     }
 }
 
 namespace Random
 {
-    interface NumberGenerator
+    interface Engine
     {
-        public function generate(): int;
+        public function nextByteSize(): int;
+
+        public function generate(): string;
     }
 
     final class Randomizer
     {
-        public readonly NumberGenerator $numberGenerator;
+        public readonly Engine $engine;
 
-        public function __construct(?NumberGenerator $numberGenerator = null) {}
+        public function __construct(?Engine $engine = null) {}
 
-        public function getInt(int $min, int $max): int {}
+        public function getInt(int $min = UNKNOWN, int $max = UNKNOWN): int {}
 
         public function getBytes(int $legnth): string {}
 
