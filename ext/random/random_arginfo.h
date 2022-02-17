@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: ee510b2ecec5f81b19d73c666b632a8add8cfa27 */
+ * Stub hash: 6b2ec18967dc1f76521d722318a8aa18496f7674 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -36,8 +36,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_XorShift128Plus___construct, 
 	ZEND_ARG_TYPE_MASK(0, seed, MAY_BE_STRING|MAY_BE_LONG, NULL)
 ZEND_END_ARG_INFO()
 
-#define arginfo_class_Random_Engine_XorShift128Plus_nextByteSize arginfo_mt_getrandmax
-
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_Engine_XorShift128Plus_generate, 0, 0, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
@@ -55,8 +53,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_MersenneTwister___construct, 
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, 0, "MT_RAND_MT19937")
 ZEND_END_ARG_INFO()
 
-#define arginfo_class_Random_Engine_MersenneTwister_nextByteSize arginfo_mt_getrandmax
-
 #define arginfo_class_Random_Engine_MersenneTwister_generate arginfo_class_Random_Engine_XorShift128Plus_generate
 
 #define arginfo_class_Random_Engine_MersenneTwister___serialize arginfo_class_Random_Engine_XorShift128Plus___serialize
@@ -69,8 +65,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_CombinedLCG___construct, 0, 0
 	ZEND_ARG_TYPE_INFO(0, seed, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
-#define arginfo_class_Random_Engine_CombinedLCG_nextByteSize arginfo_mt_getrandmax
-
 #define arginfo_class_Random_Engine_CombinedLCG_generate arginfo_class_Random_Engine_XorShift128Plus_generate
 
 #define arginfo_class_Random_Engine_CombinedLCG___serialize arginfo_class_Random_Engine_XorShift128Plus___serialize
@@ -82,11 +76,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_Secure___construct, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
-#define arginfo_class_Random_Engine_Secure_nextByteSize arginfo_mt_getrandmax
-
 #define arginfo_class_Random_Engine_Secure_generate arginfo_class_Random_Engine_XorShift128Plus_generate
-
-#define arginfo_class_Random_Engine_nextByteSize arginfo_mt_getrandmax
 
 #define arginfo_class_Random_Engine_generate arginfo_class_Random_Engine_XorShift128Plus_generate
 
@@ -121,7 +111,6 @@ ZEND_FUNCTION(mt_getrandmax);
 ZEND_FUNCTION(random_bytes);
 ZEND_FUNCTION(random_int);
 ZEND_METHOD(Random_Engine_XorShift128Plus, __construct);
-ZEND_METHOD(Random_Engine_XorShift128Plus, nextByteSize);
 ZEND_METHOD(Random_Engine_XorShift128Plus, generate);
 ZEND_METHOD(Random_Engine_XorShift128Plus, __serialize);
 ZEND_METHOD(Random_Engine_XorShift128Plus, __unserialize);
@@ -154,7 +143,6 @@ static const zend_function_entry ext_functions[] = {
 
 static const zend_function_entry class_Random_Engine_XorShift128Plus_methods[] = {
 	ZEND_ME(Random_Engine_XorShift128Plus, __construct, arginfo_class_Random_Engine_XorShift128Plus___construct, ZEND_ACC_PUBLIC)
-	ZEND_ME(Random_Engine_XorShift128Plus, nextByteSize, arginfo_class_Random_Engine_XorShift128Plus_nextByteSize, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Engine_XorShift128Plus, generate, arginfo_class_Random_Engine_XorShift128Plus_generate, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Engine_XorShift128Plus, __serialize, arginfo_class_Random_Engine_XorShift128Plus___serialize, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Engine_XorShift128Plus, __unserialize, arginfo_class_Random_Engine_XorShift128Plus___unserialize, ZEND_ACC_PUBLIC)
@@ -165,7 +153,6 @@ static const zend_function_entry class_Random_Engine_XorShift128Plus_methods[] =
 
 static const zend_function_entry class_Random_Engine_MersenneTwister_methods[] = {
 	ZEND_ME(Random_Engine_MersenneTwister, __construct, arginfo_class_Random_Engine_MersenneTwister___construct, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(Random_Engine_XorShift128Plus, nextByteSize, nextByteSize, arginfo_class_Random_Engine_MersenneTwister_nextByteSize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_XorShift128Plus, generate, generate, arginfo_class_Random_Engine_MersenneTwister_generate, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_XorShift128Plus, __serialize, __serialize, arginfo_class_Random_Engine_MersenneTwister___serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_XorShift128Plus, __unserialize, __unserialize, arginfo_class_Random_Engine_MersenneTwister___unserialize, ZEND_ACC_PUBLIC)
@@ -176,7 +163,6 @@ static const zend_function_entry class_Random_Engine_MersenneTwister_methods[] =
 
 static const zend_function_entry class_Random_Engine_CombinedLCG_methods[] = {
 	ZEND_ME(Random_Engine_CombinedLCG, __construct, arginfo_class_Random_Engine_CombinedLCG___construct, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(Random_Engine_XorShift128Plus, nextByteSize, nextByteSize, arginfo_class_Random_Engine_CombinedLCG_nextByteSize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_XorShift128Plus, generate, generate, arginfo_class_Random_Engine_CombinedLCG_generate, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_XorShift128Plus, __serialize, __serialize, arginfo_class_Random_Engine_CombinedLCG___serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_XorShift128Plus, __unserialize, __unserialize, arginfo_class_Random_Engine_CombinedLCG___unserialize, ZEND_ACC_PUBLIC)
@@ -187,14 +173,12 @@ static const zend_function_entry class_Random_Engine_CombinedLCG_methods[] = {
 
 static const zend_function_entry class_Random_Engine_Secure_methods[] = {
 	ZEND_ME(Random_Engine_Secure, __construct, arginfo_class_Random_Engine_Secure___construct, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(Random_Engine_XorShift128Plus, nextByteSize, nextByteSize, arginfo_class_Random_Engine_Secure_nextByteSize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_XorShift128Plus, generate, generate, arginfo_class_Random_Engine_Secure_generate, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
 };
 
 
 static const zend_function_entry class_Random_Engine_methods[] = {
-	ZEND_ABSTRACT_ME_WITH_FLAGS(Random_Engine, nextByteSize, arginfo_class_Random_Engine_nextByteSize, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT)
 	ZEND_ABSTRACT_ME_WITH_FLAGS(Random_Engine, generate, arginfo_class_Random_Engine_generate, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT)
 	ZEND_FE_END
 };

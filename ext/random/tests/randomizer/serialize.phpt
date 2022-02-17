@@ -10,11 +10,6 @@ $engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_IN
 $engines[] = new Random\Engine\CombinedLCG(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new Random\Engine\Secure(); 
 $engines[] = new class () implements Random\Engine {
-    public function nextByteSize(): int
-    {
-        return 8;
-    }
-
     public function generate(): string
     {
         return '�}Q��R';
@@ -22,11 +17,6 @@ $engines[] = new class () implements Random\Engine {
 };
 class UserEngine implements Random\Engine
 {
-    public function nextByteSize(): int
-    {
-        return 8;
-    }
-
     public function generate(): string
     {
         return '�}Q��R';

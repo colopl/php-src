@@ -157,13 +157,16 @@ static zend_object_handlers random_randomizer_object_handlers;
 
 static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, uint32_t umax) {
 	uint32_t result, limit;
-	size_t generated_size = algo->size(state);
+	size_t generated_size;
 
-	result = algo->generate(state);
+	RANDOM_ENGINE_GENERATE_SIZE(algo, state, result, generated_size);
+
 	while (generated_size < sizeof(uint32_t)) {
-		size_t generate_size = algo->size(state);
+		uint32_t ret;
+		size_t generate_size;
 
-		result = (result << generate_size) | algo->generate(state);
+		RANDOM_ENGINE_GENERATE_SIZE(algo, state, ret, generate_size);
+		result = (result << generate_size) | ret;
 
 		generated_size += generate_size;
 	}
@@ -186,12 +189,14 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 
 	/* Discard numbers over the limit to avoid modulo bias */
 	while (UNEXPECTED(result > limit)) {
-		generated_size = algo->size(state);
-		result = algo->generate(state);
+		RANDOM_ENGINE_GENERATE_SIZE(algo, state, result, generated_size);
 		while (generated_size < sizeof(uint32_t)) {
-			size_t generate_size = algo->size(state);
+			uint32_t ret;
+			size_t generate_size;
 
-			result = (result << generate_size) | algo->generate(state);
+			RANDOM_ENGINE_GENERATE_SIZE(algo, state, ret, generate_size);
+
+			result = (result << generate_size) | ret;
 
 			generated_size += generate_size;
 		}
@@ -203,13 +208,17 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 #if ZEND_ULONG_MAX > UINT32_MAX
 static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, uint64_t umax) {
 	uint64_t result, limit;
-	size_t generated_size = algo->size(state);
+	size_t generated_size;
 
-	result = algo->generate(state);
+	RANDOM_ENGINE_GENERATE_SIZE(algo, state, result, generated_size);
+
 	while (generated_size < sizeof(uint64_t)) {
-		size_t generate_size = algo->size(state);
+		uint64_t ret;
+		size_t generate_size;
 
-		result = (result << generate_size) | algo->generate(state);
+		RANDOM_ENGINE_GENERATE_SIZE(algo, state, ret, generate_size);
+
+		result = (result << generate_size) | ret;
 
 		generated_size += generate_size;
 	}
@@ -232,13 +241,15 @@ static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, ui
 
 	/* Discard numbers over the limit to avoid modulo bias */
 	while (UNEXPECTED(result > limit)) {
-		generated_size = algo->size(state);
-		result = algo->generate(state);
+		RANDOM_ENGINE_GENERATE_SIZE(algo, state, result, generated_size);
 
 		while (generated_size < sizeof(uint64_t)) {
-			size_t generate_size = algo->size(state);
+			uint64_t ret;
+			size_t generate_size;
 
-			result = (result << generate_size) | algo->generate(state);
+			RANDOM_ENGINE_GENERATE_SIZE(algo, state, ret, generate_size);
+
+			result = (result << generate_size) | ret;
 
 			generated_size += generate_size;
 		}
@@ -289,7 +300,7 @@ static zend_object *php_random_engine_common_clone_obj(zend_object *old_object) 
 
 /* XorShift128Plus begin */
 
-static inline size_t xorshift128plus_size(void *state) {
+static inline size_t xorshift128plus_dynamic_generate_size(void *state) {
 	return sizeof(uint64_t);
 }
 
@@ -362,7 +373,7 @@ static zend_object *php_random_engine_xorshift128plus_new(zend_class_entry *ce) 
 
 /* MersenneTwister begin */
 
-static inline size_t mersennetwister_size(void *state) {
+static inline size_t mersennetwister_dynamic_generate__size(void *state) {
 	return sizeof(uint32_t);
 }
 
@@ -484,7 +495,7 @@ static zend_object *php_random_engine_mersennetwister_new(zend_class_entry *ce) 
 
 /* CombinedLCG begin */
 
-static inline size_t combinedlcg_size(void *state) {
+static inline size_t combinedlcg_dynamic_generate__size(void *state) {
 	return sizeof(uint32_t);
 }
 
@@ -581,7 +592,7 @@ static zend_object *php_random_engine_combinedlcg_new(zend_class_entry *ce) {
 
 /* Secure begin */
 
-static inline size_t secure_size(void *state) {
+static inline size_t secure_dynamic_generate_size(void *state) {
 	return sizeof(uint64_t);
 }
 
@@ -601,13 +612,10 @@ static zend_object *php_random_engine_secure_new(zend_class_entry *ce) {
 
 /* User begin */
 
-static inline size_t user_size(void *state) {
+static inline size_t user_dynamic_generate_size(void *state) {
 	php_random_engine_state_user *s = (php_random_engine_state_user *) state;
-	zval retval;
 
-	zend_call_known_instance_method_with_0_params(s->size_method, s->object, &retval);
-	
-	return (size_t) zval_get_long(&retval);
+	return s->last_generate_size;
 }
 
 static uint64_t user_generate(void *state) {
@@ -619,13 +627,11 @@ static uint64_t user_generate(void *state) {
 
 	zend_call_known_instance_method_with_0_params(s->generate_method, s->object, &retval);
 
-	/* not supported over 64-bit wide currently */
-	size = user_size(state);
-	if (size > sizeof(uint64_t)) {
-		size = sizeof(uint64_t);
-	}
+	/* Store generated size in a state */
+	size = Z_STR(retval)->len;
+	s->last_generate_size = size;
 
-	/* Endianness safe */
+	/* Endianness safe copy */
 	char *ptr = (char *) &result;
 	for (i = 0; i < size; i++) {
 		ptr[i] = Z_STR(retval)->val[i];
@@ -639,8 +645,9 @@ static uint64_t user_generate(void *state) {
 /* User end */
 
 const php_random_engine_algo php_random_engine_algo_xorshift128plus = {
+	sizeof(uint64_t),
+	xorshift128plus_dynamic_generate_size,
 	sizeof(php_random_engine_state_xorshift128plus),
-	xorshift128plus_size,
 	xorshift128plus_generate,
 	xorshift128plus_seed,
 	xorshift128plus_serialize,
@@ -648,8 +655,9 @@ const php_random_engine_algo php_random_engine_algo_xorshift128plus = {
 };
 
 const php_random_engine_algo php_random_engine_algo_mersennetwister = {
+	sizeof(uint32_t),
+	mersennetwister_dynamic_generate__size,
 	sizeof(php_random_engine_state_mersennetwister),
-	mersennetwister_size,
 	mersennetwister_generate,
 	mersennetwister_seed,
 	mersennetwister_serialize,
@@ -657,8 +665,9 @@ const php_random_engine_algo php_random_engine_algo_mersennetwister = {
 };
 
 const php_random_engine_algo php_random_engine_algo_combinedlcg = {
+	sizeof(uint32_t),
+	combinedlcg_dynamic_generate__size,
 	sizeof(php_random_engine_state_combinedlcg),
-	combinedlcg_size,
 	combinedlcg_generate,
 	combinedlcg_seed,
 	combinedlcg_serialize,
@@ -666,8 +675,9 @@ const php_random_engine_algo php_random_engine_algo_combinedlcg = {
 };
 
 const php_random_engine_algo php_random_engine_algo_secure = {
+	sizeof(uint64_t),
+	secure_dynamic_generate_size,
 	0,
-	secure_size,
 	secure_generate,
 	NULL,
 	NULL,
@@ -675,8 +685,9 @@ const php_random_engine_algo php_random_engine_algo_secure = {
 };
 
 const php_random_engine_algo php_random_engine_algo_user = {
+	0,										/* does not support static generate size */
+	user_dynamic_generate_size,				/* always use dynamic_generate_size */
 	sizeof(php_random_engine_state_user),
-	user_size,
 	user_generate,
 	NULL,
 	NULL,
@@ -988,7 +999,7 @@ PHPAPI zend_long php_random_engine_range(const php_random_engine_algo *algo, voi
 {
 	zend_ulong umax = max - min;
 
-	if (algo->size(state) >= sizeof(uint64_t)) {
+	if (algo->dynamic_generate_size(state) >= sizeof(uint64_t)) {
 		return (zend_long) rand_range64(algo, state, umax) + min;
 	}
 
@@ -1169,7 +1180,7 @@ PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
 	if (str_seed) {
 		/* char (8 bit) * 16 = 128 bits */
 		if (str_seed->len == 16) {
-			/* Endianness safe */
+			/* Endianness safe copy */
 			int i;
 			char *ptr = (char *) &state->s;
 			for (i = 0; i < 16; i++) {
@@ -1185,17 +1196,6 @@ PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
 }
 /* }}} */
 
-/* {{{ Get a generate random number byte size */
-PHP_METHOD(Random_Engine_XorShift128Plus, nextByteSize)
-{
-	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-
-	ZEND_PARSE_PARAMETERS_NONE();
-
-	RETURN_LONG((zend_long) engine->algo->size(engine->state));
-}
-/* }}} */
-
 /* {{{ Generate a random number */
 PHP_METHOD(Random_Engine_XorShift128Plus, generate)
 {
@@ -1208,10 +1208,10 @@ PHP_METHOD(Random_Engine_XorShift128Plus, generate)
 	ZEND_PARSE_PARAMETERS_NONE();
 
 	generated = engine->algo->generate(engine->state);
-	size = engine->algo->size(engine->state);
+	size = engine->algo->dynamic_generate_size(engine->state);
 	bytes = zend_string_alloc(size, 0);
 
-	/* Endianness safe */
+	/* Endianness safe copy */
 	for (i = 0; i < size; i++) {
 		bytes->val[i] = (generated >> (i * 8)) & 0xff;
 	}
@@ -1435,11 +1435,11 @@ PHP_METHOD(Random_Randomizer, getBytes)
 	ret = zend_string_alloc(length, 0);
 
 	while (generated_bytes <= length) {
-		size_t generated_size = randomizer->algo->size(randomizer->state);
+		size_t generated_size = randomizer->algo->dynamic_generate_size(randomizer->state);
 		
 		buf = randomizer->algo->generate(randomizer->state);
 		while (generated_size < sizeof(uint64_t)) {
-			size_t generate_size = randomizer->algo->size(randomizer->state);
+			size_t generate_size = randomizer->algo->dynamic_generate_size(randomizer->state);
 
 			buf = (buf << generate_size) | randomizer->algo->generate(randomizer->state);
 
