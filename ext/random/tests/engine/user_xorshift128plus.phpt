@@ -56,7 +56,7 @@ class XorShift128Plus
         $s1 ^= $s1 << 23;
         $this->s1 = $s1 ^ $s0 ^ (($s1 >> 18) & self::MASK_S18) ^ (($s0 >> 5) & self::MASK_S5);
 
-        return \pack('q*', $z);
+        return \pack('P*', $z);
     }
 
     protected function splitmix64(int &$s): int
