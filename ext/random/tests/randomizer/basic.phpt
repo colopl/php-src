@@ -37,7 +37,8 @@ foreach ($engines as $engine) {
 
     // getBytes
     for ($i = 0; $i < 1000; $i++) {
-        if (\strlen($randomizer->getBytes(1024)) !== 1024) {
+        $length = \random_int(1, 1024);
+        if (\strlen($randomizer->getBytes($length)) !== $length) {
             die($engine::class . ': getBytes: failure.');
         }
     }
