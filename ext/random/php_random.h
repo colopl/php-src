@@ -198,8 +198,8 @@ PHP_RINIT_FUNCTION(random);
 
 ZEND_BEGIN_MODULE_GLOBALS(random)
 	php_random_engine_state_combinedlcg clcg;		/* Combined LCG global state */
-	php_random_engine_state_mersennetwister mt;	/* MT global state */
-	int random_fd;											/* random file discriptor */
+	php_random_engine_state_mersennetwister mt;		/* MersenneTwister global state */
+	int random_fd;									/* random file discriptor */
 ZEND_END_MODULE_GLOBALS(random)
 
 # define RANDOM_G(v)	ZEND_MODULE_GLOBALS_ACCESSOR(random, v)
