@@ -1531,7 +1531,8 @@ PHP_METHOD(Random_Randomizer, getBytes)
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
 	zend_string *retval;
 	zend_long length;
-	size_t generated_size = 0;
+	size_t total_size = 0;
+	size_t required_size;
 	int i;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
@@ -1544,19 +1545,22 @@ PHP_METHOD(Random_Randomizer, getBytes)
 	}
 
 	retval = zend_string_alloc(length, 0);
+	required_size = length * sizeof(char);
 
-	while (generated_size < (length * sizeof(char))) {
-		uint64_t generated;
-		size_t generate_size;
+	while (total_size < required_size) {
+		uint64_t result;
+		size_t generated_size;
 
-		RANDOM_ENGINE_GENERATE_SIZE(randomizer->algo, randomizer->state, generated, generate_size);
+		RANDOM_ENGINE_GENERATE_SIZE(randomizer->algo, randomizer->state, result, generated_size);
 
-		for (i = 0; i < generate_size; i++) {
-			ZSTR_VAL(retval)[i] = (generated >> (i * 8)) & 0xff;
+		for (i = 0; i < generated_size; i++) {
+			ZSTR_VAL(retval)[total_size++] = (result >> (i * sizeof(char)) & 0xff);
+			if (total_size >= required_size) {
+				break;
+			}
 		}
-
-		generated_size += generate_size;
 	}
+
 	ZSTR_VAL(retval)[length] = '\0';
 	RETURN_STR(retval);
 }
