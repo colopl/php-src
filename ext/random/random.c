@@ -299,7 +299,7 @@ static zend_object *php_random_engine_common_clone_obj(zend_object *old_object) 
 
 /* CombinedLCG begin */
 
-static inline size_t combinedlcg_dynamic_generate__size(void *state) {
+static inline size_t combinedlcg_dynamic_generate_size(void *state) {
 	return sizeof(uint32_t);
 }
 
@@ -394,7 +394,7 @@ static zend_object *php_random_engine_combinedlcg_new(zend_class_entry *ce) {
 
 const php_random_engine_algo php_random_engine_algo_combinedlcg = {
 	sizeof(uint32_t),
-	combinedlcg_dynamic_generate__size,
+	combinedlcg_dynamic_generate_size,
 	sizeof(php_random_engine_state_combinedlcg),
 	combinedlcg_generate,
 	combinedlcg_seed,
@@ -406,7 +406,7 @@ const php_random_engine_algo php_random_engine_algo_combinedlcg = {
 
 /* MersenneTwister begin */
 
-static inline size_t mersennetwister_dynamic_generate__size(void *state) {
+static inline size_t mersennetwister_dynamic_generate_size(void *state) {
 	return sizeof(uint32_t);
 }
 
@@ -526,7 +526,7 @@ static zend_object *php_random_engine_mersennetwister_new(zend_class_entry *ce) 
 
 const php_random_engine_algo php_random_engine_algo_mersennetwister = {
 	sizeof(uint32_t),
-	mersennetwister_dynamic_generate__size,
+	mersennetwister_dynamic_generate_size,
 	sizeof(php_random_engine_state_mersennetwister),
 	mersennetwister_generate,
 	mersennetwister_seed,
