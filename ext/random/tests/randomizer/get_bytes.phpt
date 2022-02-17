@@ -16,6 +16,7 @@ $randomizer = new \Random\Randomizer (
                 2 => 'l',
                 3 => 'l',
                 4 => 'o',
+                5 => \random_bytes(32), // 128-bit
             };
         }
     }
@@ -24,6 +25,8 @@ $randomizer = new \Random\Randomizer (
 if ($randomizer->getBytes(5) !== 'Hello') {
     die('failure');
 }
+
+$randomizer->getBytes(6);
 
 die('success');
 ?>
