@@ -603,6 +603,11 @@ static uint64_t user_generate(void *state) {
 
 	/* Store generated size in a state */
 	size = Z_STR(retval)->len;
+
+	/* Guard for over 64-bit results */
+	if (size > sizeof(uint64_t)) {
+		size = sizeof(uint64_t);
+	}
 	s->last_generate_size = size;
 
 	if (size > 0) {
