@@ -1084,14 +1084,10 @@ PHPAPI zend_long php_random_engine_range(const php_random_engine_algo *algo, voi
 {
 	zend_ulong umax = max - min;
 
-	/* user-land OR 64-bit RNG */
-	if (algo->static_generate_size == 0 || algo->static_generate_size > sizeof(uint32_t)) {
-		return (zend_long) rand_range64(algo, state, umax) + min;
-	}
-
 #if ZEND_ULONG_MAX > UINT32_MAX
-	if (umax > UINT32_MAX) {
-		return (zend_long) (rand_range64(algo, state, umax) + min);
+	/* user-land OR 64-bit RNG OR umax over 32-bit */
+	if (algo->static_generate_size == 0 || algo->static_generate_size > sizeof(uint32_t) || umax > UINT32_MAX) {
+		return (zend_long) rand_range64(algo, state, umax) + min;
 	}
 #endif
 
