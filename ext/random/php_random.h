@@ -160,7 +160,6 @@ typedef struct _php_random_engine_state_mersennetwister {
 
 typedef struct _php_random_engine_state_user {
 	zend_object *object;
-	zend_function *size_method;
 	zend_function *generate_method;
 	size_t last_generate_size;
 } php_random_engine_state_user;

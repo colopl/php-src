@@ -821,12 +821,7 @@ static void php_random_randomizer_common_init(php_random_randomizer *randomizer,
 		/* Self allocation */
 		php_random_engine_state_user *state = emalloc(sizeof(php_random_engine_state_user));
 		zend_string *mname;
-		zend_function *size_method, *generate_method;
-
-		/* Find user-defined function entry */
-		mname = zend_string_init("nextbytesize", sizeof("nextbytesize") - 1, 0);
-		size_method = zend_hash_find_ptr(&engine_object->ce->function_table, mname);
-		zend_string_release(mname);
+		zend_function *generate_method;
 
 		mname = zend_string_init("generate", sizeof("generate") - 1, 0);
 		generate_method = zend_hash_find_ptr(&engine_object->ce->function_table, mname);
@@ -834,7 +829,6 @@ static void php_random_randomizer_common_init(php_random_randomizer *randomizer,
 
 		/* Create compatible state */
 		state->object = engine_object;
-		state->size_method = size_method;
 		state->generate_method = generate_method;
 
 		/* Copy common pointers */
