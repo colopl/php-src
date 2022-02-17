@@ -160,7 +160,6 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 	size_t generated_size;
 
 	RANDOM_ENGINE_GENERATE_SIZE(algo, state, result, generated_size);
-
 	while (generated_size < sizeof(uint32_t)) {
 		uint32_t ret;
 		size_t generate_size;
@@ -624,6 +623,7 @@ static uint64_t user_generate(void *state) {
 	size_t size;
 	zval retval;
 	int i;
+	char *ptr;
 
 	zend_call_known_instance_method_with_0_params(s->generate_method, s->object, &retval);
 
@@ -632,7 +632,7 @@ static uint64_t user_generate(void *state) {
 	s->last_generate_size = size;
 
 	/* Endianness safe copy */
-	char *ptr = (char *) &result;
+	ptr = (char *) &result;
 	for (i = 0; i < size; i++) {
 		ptr[i] = Z_STR(retval)->val[i];
 	}
@@ -1213,7 +1213,7 @@ PHP_METHOD(Random_Engine_XorShift128Plus, generate)
 
 	/* Endianness safe copy */
 	for (i = 0; i < size; i++) {
-		bytes->val[i] = (generated >> (i * 8)) & 0xff;
+		ZSTR_VAL(bytes)[i] = (generated >> (i * 8)) & 0xff;
 	}
 	
 	ZSTR_VAL(bytes)[size] = '\0';
@@ -1416,11 +1416,9 @@ PHP_METHOD(Random_Randomizer, getInt)
 PHP_METHOD(Random_Randomizer, getBytes)
 {
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
-	zend_string *ret;
+	zend_string *retval;
 	zend_long length;
-	uint64_t buf;
-	char *bytes;
-	size_t generated_bytes = 0;
+	size_t generated_size = 0;
 	int i;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
@@ -1432,31 +1430,22 @@ PHP_METHOD(Random_Randomizer, getBytes)
 		RETURN_THROWS();
 	}
 
-	ret = zend_string_alloc(length, 0);
+	retval = zend_string_alloc(length, 0);
 
-	while (generated_bytes <= length) {
-		size_t generated_size = randomizer->algo->dynamic_generate_size(randomizer->state);
-		
-		buf = randomizer->algo->generate(randomizer->state);
-		while (generated_size < sizeof(uint64_t)) {
-			size_t generate_size = randomizer->algo->dynamic_generate_size(randomizer->state);
+	while (generated_size < (length * sizeof(char))) {
+		uint64_t generated;
+		size_t generate_size;
 
-			buf = (buf << generate_size) | randomizer->algo->generate(randomizer->state);
+		RANDOM_ENGINE_GENERATE_SIZE(randomizer->algo, randomizer->state, generated, generate_size);
 
-			generated_size += generate_size;
+		for (i = 0; i < generate_size; i++) {
+			ZSTR_VAL(retval)[i] = (generated >> (i * 8)) & 0xff;
 		}
 
-		bytes = (char *) &buf;
-		for (i = 0; i < (sizeof(uint64_t) / sizeof(char)); i ++) {
-			ZSTR_VAL(ret)[generated_bytes + i] = bytes[i];
-
-			if ((generated_bytes + i) >= length) {
-				ZSTR_VAL(ret)[length] = '\0';
-				RETURN_STR(ret);
-			}
-		}
-		generated_bytes += (sizeof(uint64_t) / sizeof(char));
+		generated_size += generate_size;
 	}
+	ZSTR_VAL(retval)[length] = '\0';
+	RETURN_STR(retval);
 }
 /* }}} */
 
