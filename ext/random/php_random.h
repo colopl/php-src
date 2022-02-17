@@ -124,17 +124,19 @@ extern zend_module_entry random_module_entry;
 # define phpext_random_ptr &random_module_entry
 
 extern PHPAPI zend_class_entry *random_ce_Random_Engine;
-extern PHPAPI zend_class_entry *random_ce_Random_Engine_XorShift128Plus;
-extern PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_CombinedLCG;
+extern PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
+extern PHPAPI zend_class_entry *random_ce_Random_Engine_XorShift128Plus;
+extern PHPAPI zend_class_entry *random_ce_Random_Engine_Xoshiro256StarStar;
 extern PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
-extern const php_random_engine_algo php_random_engine_algo_xorshift128plus;
-extern const php_random_engine_algo php_random_engine_algo_mersennetwister;
 extern const php_random_engine_algo php_random_engine_algo_combinedlcg;
+extern const php_random_engine_algo php_random_engine_algo_mersennetwister;
 extern const php_random_engine_algo php_random_engine_algo_secure;
 extern const php_random_engine_algo php_random_engine_algo_user;
+extern const php_random_engine_algo php_random_engine_algo_xorshift128plus;
+extern const php_random_engine_algo php_random_engine_algo_xoshiro256starstar;
 
 typedef struct _php_random_engine {
 	const php_random_engine_algo *algo;
@@ -142,16 +144,10 @@ typedef struct _php_random_engine {
 	zend_object std;
 } php_random_engine;
 
-typedef struct _php_random_randomizer {
-	const php_random_engine_algo *algo;
-	void *state;
-	bool self_allocate;
-	zend_object std;
-} php_random_randomizer;
-
-typedef struct _php_random_engine_state_xorshift128plus {
-	uint64_t s[2];
-} php_random_engine_state_xorshift128plus;
+typedef struct _php_random_engine_state_combinedlcg {
+	int32_t s[2];
+	bool seeded;
+} php_random_engine_state_combinedlcg;
 
 typedef struct _php_random_engine_state_mersennetwister {
 	uint32_t s[MT_N];
@@ -160,17 +156,27 @@ typedef struct _php_random_engine_state_mersennetwister {
 	bool seeded;
 } php_random_engine_state_mersennetwister;
 
-typedef struct _php_random_engine_state_combinedlcg {
-	int32_t s[2];
-	bool seeded;
-} php_random_engine_state_combinedlcg;
-
 typedef struct _php_random_engine_state_user {
 	zend_object *object;
 	zend_function *size_method;
 	zend_function *generate_method;
 	size_t last_generate_size;
 } php_random_engine_state_user;
+
+typedef struct _php_random_engine_state_xorshift128plus {
+	uint64_t s[2];
+} php_random_engine_state_xorshift128plus;
+
+typedef struct _php_random_engine_state_xoshiro256starstar {
+	uint64_t s[4];
+} php_random_engine_state_xoshiro256starstar;
+
+typedef struct _php_random_randomizer {
+	const php_random_engine_algo *algo;
+	void *state;
+	bool self_allocate;
+	zend_object std;
+} php_random_randomizer;
 
 static inline php_random_engine *php_random_engine_from_obj(zend_object *obj) {
 	return (php_random_engine *)((char *)(obj) - XtOffsetOf(php_random_engine, std));
