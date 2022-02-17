@@ -615,6 +615,7 @@ static uint64_t user_generate(void *state) {
 	uint64_t result = 0;
 	size_t size;
 	zval retval;
+	int i;
 
 	zend_call_known_instance_method_with_0_params(s->generate_method, s->object, &retval);
 
@@ -623,7 +624,12 @@ static uint64_t user_generate(void *state) {
 	if (size > sizeof(uint64_t)) {
 		size = sizeof(uint64_t);
 	}
-	memcpy(&result, Z_STR(retval)->val, size);
+
+	/* Endianness safe */
+	char *ptr = (char *) &result;
+	for (i = 0; i < size; i++) {
+		ptr[i] = Z_STR(retval)->val[i];
+	}
 
 	zval_ptr_dtor(&retval);
 
@@ -1163,7 +1169,12 @@ PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
 	if (str_seed) {
 		/* char (8 bit) * 16 = 128 bits */
 		if (str_seed->len == 16) {
-			memcpy(state->s, str_seed->val, 16);
+			/* Endianness safe */
+			int i;
+			char *ptr = (char *) &state->s;
+			for (i = 0; i < 16; i++) {
+				ptr[i] = str_seed->val[i];
+			}
 		}  else {
 			zend_argument_value_error(1, "state strings must be 16 bytes");
 			RETURN_THROWS();
@@ -1192,6 +1203,7 @@ PHP_METHOD(Random_Engine_XorShift128Plus, generate)
 	size_t size;
 	uint64_t generated;
 	zend_string *bytes;
+	int i;
 	
 	ZEND_PARSE_PARAMETERS_NONE();
 
@@ -1199,7 +1211,10 @@ PHP_METHOD(Random_Engine_XorShift128Plus, generate)
 	size = engine->algo->size(engine->state);
 	bytes = zend_string_alloc(size, 0);
 
-	memcpy(ZSTR_VAL(bytes), &generated, size);
+	/* Endianness safe */
+	for (i = 0; i < size; i++) {
+		bytes->val[i] = (generated >> (i * 8)) & 0xff;
+	}
 	
 	ZSTR_VAL(bytes)[size] = '\0';
 
@@ -1404,7 +1419,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 	zend_string *ret;
 	zend_long length;
 	uint64_t buf;
-	uint8_t *bytes;
+	char *bytes;
 	size_t generated_bytes = 0;
 	int i;
 
@@ -1431,8 +1446,8 @@ PHP_METHOD(Random_Randomizer, getBytes)
 			generated_size += generate_size;
 		}
 
-		bytes = (uint8_t *) &buf;
-		for (i = 0; i < (sizeof(uint64_t) / sizeof(uint8_t)); i ++) {
+		bytes = (char *) &buf;
+		for (i = 0; i < (sizeof(uint64_t) / sizeof(char)); i ++) {
 			ZSTR_VAL(ret)[generated_bytes + i] = bytes[i];
 
 			if ((generated_bytes + i) >= length) {
@@ -1440,7 +1455,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 				RETURN_STR(ret);
 			}
 		}
-		generated_bytes += (sizeof(uint64_t) / sizeof(uint8_t));
+		generated_bytes += (sizeof(uint64_t) / sizeof(char));
 	}
 }
 /* }}} */
