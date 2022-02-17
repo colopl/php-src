@@ -1420,8 +1420,9 @@ PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
 		if (str_seed->len == 16) {
 			/* Endianness safe copy */
 			for (i = 0; i < 2; i++) {
+				state->s[i] = 0;
 				for (j = 0; j < 8; j++) {
-					state->s[i] += (unsigned char) ZSTR_VAL(str_seed)[(i * j) + j] >> (j * 8);
+					state->s[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
 				}
 			}
 		}  else {
@@ -1452,8 +1453,9 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 		if (str_seed->len == 32) {
 			/* Endianness safe copy */
 			for (i = 0; i < 4; i++) {
+				state->s[i] = 0;
 				for (j = 0; j < 8; j++) {
-					state->s[i] += (unsigned char) ZSTR_VAL(str_seed)[(i * j) + j] >> (j * 8);
+					state->s[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
 				}
 			}
 		}  else {
