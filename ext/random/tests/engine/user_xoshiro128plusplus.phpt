@@ -42,7 +42,7 @@ final class Xoshiro128PP implements \Random\Engine
 
         $this->s3 = self::rotl($this->s3, 11);
 
-        return \pack('L', $result);
+        return \pack('V', $result);
     }
 }
 
