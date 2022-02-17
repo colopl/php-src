@@ -605,10 +605,14 @@ static uint64_t user_generate(void *state) {
 	size = Z_STR(retval)->len;
 	s->last_generate_size = size;
 
-	/* Endianness safe copy */
-	ptr = (char *) &result;
-	for (i = 0; i < size; i++) {
-		ptr[i] = Z_STR(retval)->val[i];
+	if (size > 0) {
+		/* Endianness safe copy */
+		ptr = (char *) &result;
+		for (i = 0; i < size; i++) {
+			ptr[i] = Z_STR(retval)->val[i];
+		}
+	} else {
+		result = 0;
 	}
 
 	zval_ptr_dtor(&retval);
