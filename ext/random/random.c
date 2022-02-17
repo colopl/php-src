@@ -612,7 +612,7 @@ static uint64_t user_generate(void *state) {
 	if (size > 0) {
 		/* Endianness safe copy */
 		for (i = 0; i < size; i++) {
-			result += (unsigned char) Z_STRVAL(retval)[i] << 8 * i;
+			result += ((uint64_t) (unsigned char) Z_STRVAL(retval)[i]) << (8 * i);
 		}
 	} else {
 		result = 0;
