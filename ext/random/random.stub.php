@@ -27,9 +27,9 @@ namespace {
 
 namespace Random\Engine
 {
-    class XorShift128Plus implements Random\Engine
+    class CombinedLCG implements Random\Engine
     {
-        public function __construct(string|int $seed) {}
+        public function __construct(int $seed) {}
 
         public function generate(): string {}
 
@@ -44,33 +44,16 @@ namespace Random\Engine
     {
         public function __construct(int $seed, int $mode = MT_RAND_MT19937) {}
 
-        /** @implementation-alias Random\Engine\XorShift128Plus::generate */
+        /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}
 
-        /** @implementation-alias Random\Engine\XorShift128Plus::__serialize */
+        /** @implementation-alias Random\Engine\CombinedLCG::__serialize */
         public function __serialize(): array {}
 
-        /** @implementation-alias Random\Engine\XorShift128Plus::__unserialize */
+        /** @implementation-alias Random\Engine\CombinedLCG::__unserialize */
         public function __unserialize(array $data): void {}
 
-        /** @implementation-alias Random\Engine\XorShift128Plus::__debugInfo */
-        public function __debugInfo(): array {}
-    }
-
-    class CombinedLCG implements Random\Engine
-    {
-        public function __construct(int $seed) {}
-
-        /** @implementation-alias Random\Engine\XorShift128Plus::generate */
-        public function generate(): string {}
-
-        /** @implementation-alias Random\Engine\XorShift128Plus::__serialize */
-        public function __serialize(): array {}
-
-        /** @implementation-alias Random\Engine\XorShift128Plus::__unserialize */
-        public function __unserialize(array $data): void {}
-
-        /** @implementation-alias Random\Engine\XorShift128Plus::__debugInfo */
+        /** @implementation-alias Random\Engine\CombinedLCG::__debugInfo */
         public function __debugInfo(): array {}
     }
 
@@ -79,8 +62,42 @@ namespace Random\Engine
     {
         public function __construct() {}
 
-        /** @implementation-alias Random\Engine\XorShift128Plus::generate */
+        /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}
+    }
+
+    class XorShift128Plus implements Random\Engine
+    {
+        public function __construct(string|int $seed) {}
+
+        /** @implementation-alias Random\Engine\CombinedLCG::generate */
+        public function generate(): string {}
+
+        /** @implementation-alias Random\Engine\CombinedLCG::__serialize */
+        public function __serialize(): array {}
+
+        /** @implementation-alias Random\Engine\CombinedLCG::__unserialize */
+        public function __unserialize(array $data): void {}
+
+        /** @implementation-alias Random\Engine\CombinedLCG::__debugInfo */
+        public function __debugInfo(): array {}
+    }
+
+    class Xoshiro256StarStar implements Random\Engine
+    {
+        public function __construct(string|int $seed) {}
+
+        /** @implementation-alias Random\Engine\CombinedLCG::generate */
+        public function generate(): string {}
+
+        /** @implementation-alias Random\Engine\CombinedLCG::__serialize */
+        public function __serialize(): array {}
+
+        /** @implementation-alias Random\Engine\CombinedLCG::__unserialize */
+        public function __unserialize(array $data): void {}
+
+        /** @implementation-alias Random\Engine\CombinedLCG::__debugInfo */
+        public function __debugInfo(): array {}
     }
 }
 
