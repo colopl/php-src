@@ -597,12 +597,11 @@ static uint64_t user_generate(void *state) {
 	size_t size;
 	zval retval;
 	int i;
-	char *ptr;
 
 	zend_call_known_instance_method_with_0_params(s->generate_method, s->object, &retval);
 
 	/* Store generated size in a state */
-	size = Z_STR(retval)->len;
+	size = Z_STRLEN(retval);
 
 	/* Guard for over 64-bit results */
 	if (size > sizeof(uint64_t)) {
@@ -612,9 +611,8 @@ static uint64_t user_generate(void *state) {
 
 	if (size > 0) {
 		/* Endianness safe copy */
-		ptr = (char *) &result;
 		for (i = 0; i < size; i++) {
-			ptr[i] = Z_STR(retval)->val[i];
+			result += (unsigned char) Z_STRVAL(retval)[i] << 8 * i;
 		}
 	} else {
 		result = 0;
@@ -1274,7 +1272,7 @@ PHP_METHOD(Random_Engine_CombinedLCG, generate)
 	uint64_t generated;
 	zend_string *bytes;
 	int i;
-	
+
 	ZEND_PARSE_PARAMETERS_NONE();
 
 	RANDOM_ENGINE_GENERATE_SIZE(engine->algo, engine->state, generated, size);
@@ -1285,7 +1283,6 @@ PHP_METHOD(Random_Engine_CombinedLCG, generate)
 	for (i = 0; i < size; i++) {
 		ZSTR_VAL(bytes)[i] = (generated >> (i * 8)) & 0xff;
 	}
-	
 	ZSTR_VAL(bytes)[size] = '\0';
 
 	RETURN_STR(bytes);
@@ -1412,6 +1409,7 @@ PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
 	php_random_engine_state_xorshift128plus *state = engine->state;
 	zend_string *str_seed = NULL;
 	zend_long int_seed = 0;
+	int i, j;
 	
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_STR_OR_LONG(str_seed, int_seed)
@@ -1421,10 +1419,10 @@ PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
 		/* char (8 bit) * 16 = 128 bits */
 		if (str_seed->len == 16) {
 			/* Endianness safe copy */
-			int i;
-			char *ptr = (char *) &state->s;
-			for (i = 0; i < 16; i++) {
-				ptr[i] = str_seed->val[i];
+			for (i = 0; i < 2; i++) {
+				for (j = 0; j < 8; j++) {
+					state->s[i] += (unsigned char) ZSTR_VAL(str_seed)[(i * j) + j] >> (j * 8);
+				}
 			}
 		}  else {
 			zend_argument_value_error(1, "state strings must be 16 bytes");
@@ -1443,6 +1441,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 	php_random_engine_state_xoshiro256starstar *state = engine->state;
 	zend_string *str_seed = NULL;
 	zend_long int_seed = 0;
+	int i, j;
 	
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_STR_OR_LONG(str_seed, int_seed)
@@ -1452,10 +1451,10 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 		/* char (8 bit) * 32 = 256 bits */
 		if (str_seed->len == 32) {
 			/* Endianness safe copy */
-			int i;
-			char *ptr = (char *) &state->s;
-			for (i = 0; i < 32; i++) {
-				ptr[i] = str_seed->val[i];
+			for (i = 0; i < 4; i++) {
+				for (j = 0; j < 8; j++) {
+					state->s[i] += (unsigned char) ZSTR_VAL(str_seed)[(i * j) + j] >> (j * 8);
+				}
 			}
 		}  else {
 			zend_argument_value_error(1, "state strings must be 32 bytes");
@@ -1550,7 +1549,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 	}
 
 	retval = zend_string_alloc(length, 0);
-	required_size = length * sizeof(char);
+	required_size = length;
 
 	while (total_size < required_size) {
 		uint64_t result;
@@ -1559,7 +1558,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 		RANDOM_ENGINE_GENERATE_SIZE(randomizer->algo, randomizer->state, result, generated_size);
 
 		for (i = 0; i < generated_size; i++) {
-			ZSTR_VAL(retval)[total_size++] = (result >> (i * sizeof(char)) & 0xff);
+			ZSTR_VAL(retval)[total_size++] = (result >> (i * 8) & 0xff);
 			if (total_size >= required_size) {
 				break;
 			}

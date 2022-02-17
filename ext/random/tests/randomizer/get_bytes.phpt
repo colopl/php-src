@@ -17,6 +17,7 @@ $randomizer = new \Random\Randomizer (
                 3 => 'l',
                 4 => 'o',
                 5 => \random_bytes(32), // 128-bit
+                default => \random_bytes(16),
             };
         }
     }
