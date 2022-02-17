@@ -1084,7 +1084,8 @@ PHPAPI zend_long php_random_engine_range(const php_random_engine_algo *algo, voi
 {
 	zend_ulong umax = max - min;
 
-	if (algo->dynamic_generate_size(state) >= sizeof(uint64_t)) {
+	/* user-land OR 64-bit RNG */
+	if (algo->static_generate_size == 0 || algo->static_generate_size > sizeof(uint32_t)) {
 		return (zend_long) rand_range64(algo, state, umax) + min;
 	}
 
@@ -1275,8 +1276,8 @@ PHP_METHOD(Random_Engine_CombinedLCG, generate)
 	
 	ZEND_PARSE_PARAMETERS_NONE();
 
-	generated = engine->algo->generate(engine->state);
-	size = engine->algo->dynamic_generate_size(engine->state);
+	RANDOM_ENGINE_GENERATE_SIZE(engine->algo, engine->state, generated, size);
+
 	bytes = zend_string_alloc(size, 0);
 
 	/* Endianness safe copy */
