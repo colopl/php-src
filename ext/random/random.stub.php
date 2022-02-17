@@ -31,8 +31,6 @@ namespace Random\Engine
     {
         public function __construct(string|int $seed) {}
 
-        public function nextByteSize(): int {}
-
         public function generate(): string {}
 
         public function __serialize(): array {}
@@ -45,9 +43,6 @@ namespace Random\Engine
     class MersenneTwister implements Random\Engine
     {
         public function __construct(int $seed, int $mode = MT_RAND_MT19937) {}
-
-        /** @implementation-alias Random\Engine\XorShift128Plus::nextByteSize */
-        public function nextByteSize(): int {}
 
         /** @implementation-alias Random\Engine\XorShift128Plus::generate */
         public function generate(): string {}
@@ -65,9 +60,6 @@ namespace Random\Engine
     class CombinedLCG implements Random\Engine
     {
         public function __construct(int $seed) {}
-
-        /** @implementation-alias Random\Engine\XorShift128Plus::nextByteSize */
-        public function nextByteSize(): int {}
 
         /** @implementation-alias Random\Engine\XorShift128Plus::generate */
         public function generate(): string {}
@@ -87,9 +79,6 @@ namespace Random\Engine
     {
         public function __construct() {}
 
-        /** @implementation-alias Random\Engine\XorShift128Plus::nextByteSize */
-        public function nextByteSize(): int {}
-
         /** @implementation-alias Random\Engine\XorShift128Plus::generate */
         public function generate(): string {}
     }
@@ -99,8 +88,6 @@ namespace Random
 {
     interface Engine
     {
-        public function nextByteSize(): int;
-
         public function generate(): string;
     }
 

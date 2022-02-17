@@ -83,6 +83,15 @@
 # define php_random_int_silent(min, max, result) \
 	php_random_int((min), (max), (result), 0)
 
+# define RANDOM_ENGINE_GENERATE_SIZE(algo, state, value, size)	\
+	do { \
+		value = algo->generate(state); \
+		size = algo->static_generate_size != 0 \
+			? algo->static_generate_size \
+			: algo->dynamic_generate_size(state) \
+		;\
+	} while(0);
+
 PHPAPI double php_combined_lcg(void);
 
 PHPAPI void php_srand(zend_long seed);
@@ -97,8 +106,9 @@ PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw);
 PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool should_throw);
 
 typedef struct _php_random_engine_algo {
+	const size_t static_generate_size;
+	size_t (*dynamic_generate_size)(void *state);
 	const size_t state_size;
-	size_t (*size)(void *state);
 	uint64_t (*generate)(void *state);
 	void (*seed)(void *state, const uint64_t seed);		/* nullable */
 	int (*serialize)(void *state, HashTable *data);		/* nullable */
@@ -159,6 +169,7 @@ typedef struct _php_random_engine_state_user {
 	zend_object *object;
 	zend_function *size_method;
 	zend_function *generate_method;
+	size_t last_generate_size;
 } php_random_engine_state_user;
 
 static inline php_random_engine *php_random_engine_from_obj(zend_object *obj) {
