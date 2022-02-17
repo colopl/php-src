@@ -368,6 +368,16 @@ static zend_object *php_random_engine_xorshift128plus_new(zend_class_entry *ce) 
 	return php_random_engine_common_init(ce, &php_random_engine_algo_xorshift128plus, &random_engine_xorshift128plus_object_handlers);
 }
 
+const php_random_engine_algo php_random_engine_algo_xorshift128plus = {
+	sizeof(uint64_t),
+	xorshift128plus_dynamic_generate_size,
+	sizeof(php_random_engine_state_xorshift128plus),
+	xorshift128plus_generate,
+	xorshift128plus_seed,
+	xorshift128plus_serialize,
+	xorshift128plus_unserialize
+};
+
 /* XorShift128Plus end */
 
 /* MersenneTwister begin */
@@ -490,6 +500,16 @@ static zend_object *php_random_engine_mersennetwister_new(zend_class_entry *ce) 
 	return php_random_engine_common_init(ce, &php_random_engine_algo_mersennetwister, &random_engine_mersennetwister_object_handlers);
 }
 
+const php_random_engine_algo php_random_engine_algo_mersennetwister = {
+	sizeof(uint32_t),
+	mersennetwister_dynamic_generate__size,
+	sizeof(php_random_engine_state_mersennetwister),
+	mersennetwister_generate,
+	mersennetwister_seed,
+	mersennetwister_serialize,
+	mersennetwister_unserialize
+};
+
 /* MersenneTwister end */
 
 /* CombinedLCG begin */
@@ -587,6 +607,16 @@ static zend_object *php_random_engine_combinedlcg_new(zend_class_entry *ce) {
 	return php_random_engine_common_init(ce, &php_random_engine_algo_combinedlcg, &random_engine_combinedlcg_object_handlers);
 }
 
+const php_random_engine_algo php_random_engine_algo_combinedlcg = {
+	sizeof(uint32_t),
+	combinedlcg_dynamic_generate__size,
+	sizeof(php_random_engine_state_combinedlcg),
+	combinedlcg_generate,
+	combinedlcg_seed,
+	combinedlcg_serialize,
+	combinedlcg_unserialize
+};
+
 /* CombinedLCG end */
 
 /* Secure begin */
@@ -606,6 +636,16 @@ static uint64_t secure_generate(void *state) {
 static zend_object *php_random_engine_secure_new(zend_class_entry *ce) {
 	return php_random_engine_common_init(ce, &php_random_engine_algo_secure, &random_engine_secure_object_handlers);
 }
+
+const php_random_engine_algo php_random_engine_algo_secure = {
+	sizeof(uint64_t),
+	secure_dynamic_generate_size,
+	0,
+	secure_generate,
+	NULL,
+	NULL,
+	NULL
+};
 
 /* Secure end */
 
@@ -642,48 +682,6 @@ static uint64_t user_generate(void *state) {
 	return result;
 }
 
-/* User end */
-
-const php_random_engine_algo php_random_engine_algo_xorshift128plus = {
-	sizeof(uint64_t),
-	xorshift128plus_dynamic_generate_size,
-	sizeof(php_random_engine_state_xorshift128plus),
-	xorshift128plus_generate,
-	xorshift128plus_seed,
-	xorshift128plus_serialize,
-	xorshift128plus_unserialize
-};
-
-const php_random_engine_algo php_random_engine_algo_mersennetwister = {
-	sizeof(uint32_t),
-	mersennetwister_dynamic_generate__size,
-	sizeof(php_random_engine_state_mersennetwister),
-	mersennetwister_generate,
-	mersennetwister_seed,
-	mersennetwister_serialize,
-	mersennetwister_unserialize
-};
-
-const php_random_engine_algo php_random_engine_algo_combinedlcg = {
-	sizeof(uint32_t),
-	combinedlcg_dynamic_generate__size,
-	sizeof(php_random_engine_state_combinedlcg),
-	combinedlcg_generate,
-	combinedlcg_seed,
-	combinedlcg_serialize,
-	combinedlcg_unserialize
-};
-
-const php_random_engine_algo php_random_engine_algo_secure = {
-	sizeof(uint64_t),
-	secure_dynamic_generate_size,
-	0,
-	secure_generate,
-	NULL,
-	NULL,
-	NULL
-};
-
 const php_random_engine_algo php_random_engine_algo_user = {
 	0,										/* does not support static generate size */
 	user_dynamic_generate_size,				/* always use dynamic_generate_size */
@@ -693,6 +691,8 @@ const php_random_engine_algo php_random_engine_algo_user = {
 	NULL,
 	NULL
 };
+
+/* User end */
 
 static zend_object *php_random_randomizer_new(zend_class_entry *ce) {
 	php_random_randomizer *randomizer = zend_object_alloc(sizeof(php_random_randomizer), ce);
