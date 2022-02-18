@@ -283,7 +283,7 @@ static inline zend_object *php_random_engine_common_init(zend_class_entry *ce, c
 
 	engine->algo = algo;
 	if (engine->algo->state_size > 0) {
-		engine->state = emalloc(engine->algo->state_size);
+		engine->state = ecalloc(1, engine->algo->state_size);
 	}
 	engine->std.handlers = handlers;
 
@@ -839,6 +839,7 @@ static void php_random_randomizer_common_init(php_random_randomizer *randomizer,
 
 		/* Create compatible state */
 		state->object = engine_object;
+		state->last_generate_size = 0;
 		state->generate_method = generate_method;
 
 		/* Copy common pointers */
