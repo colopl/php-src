@@ -504,6 +504,8 @@ static int mersennetwister_serialize(void *state, HashTable *data) {
 	}
 	ZVAL_LONG(&tmp, s->cnt);
 	zend_hash_next_index_insert(data, &tmp);
+	ZVAL_LONG(&tmp, s->mode);
+	zend_hash_next_index_insert(data, &tmp);
 	ZVAL_LONG(&tmp, s->seeded);
 	zend_hash_next_index_insert(data, &tmp);
 
@@ -523,12 +525,17 @@ static int mersennetwister_unserialize(void *state, HashTable *data) {
 
 		s->s[i] = Z_LVAL_P(tmp);
 	}
-	tmp = zend_hash_index_find(data, MT_N); /* cnt */
+	tmp = zend_hash_index_find(data, MT_N); 
 	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
 		return FAILURE;
 	}
 	s->cnt = Z_LVAL_P(tmp);
-	tmp = zend_hash_index_find(data, MT_N + 1); /* seeded */
+	tmp = zend_hash_index_find(data, MT_N + 1);
+	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
+		return FAILURE;
+	}
+	s->mode = Z_LVAL_P(tmp);
+	tmp = zend_hash_index_find(data, MT_N + 2);
 	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
 		return FAILURE;
 	}
