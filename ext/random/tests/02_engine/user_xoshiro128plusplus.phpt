@@ -1,5 +1,7 @@
 --TEST--
 Random: Engine: User: Xoshiro128++
+--SKIPIF--
+<?php if (PHP_INT_SIZE != 8) die("skip: 64-bit only"); ?>
 --FILE--
 <?php
 
