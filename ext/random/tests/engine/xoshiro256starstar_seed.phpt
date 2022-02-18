@@ -18,7 +18,30 @@ try {
     echo $e->getMessage() . PHP_EOL;
 }
 
+$engine = new \Random\Engine\Xoshiro256StarStar("\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08");
+
+\var_dump($engine);
+
+for ($i = 0; $i < 1000; $i++) {
+    $engine->generate();
+}
+\var_dump(\bin2hex($engine->generate()));
+
 ?>
---EXPECT--
+--EXPECTF--
 Random\Engine\Xoshiro256StarStar::__construct(): Argument #1 ($seed) must be of type string|int, float given
 Random\Engine\Xoshiro256StarStar::__construct(): Argument #1 ($seed) state strings must be 32 bytes
+object(Random\Engine\Xoshiro256StarStar)#%d (%d) {
+  ["__states"]=>
+  array(4) {
+    [0]=>
+    string(18) "578437695752307201"
+    [1]=>
+    string(18) "578437695752307201"
+    [2]=>
+    string(18) "578437695752307201"
+    [3]=>
+    string(18) "578437695752307201"
+  }
+}
+string(16) "90a025df9300cfd1"
