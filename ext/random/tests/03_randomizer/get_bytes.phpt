@@ -10,26 +10,31 @@ $randomizer = new \Random\Randomizer (
 
         public function generate(): string
         {
+            if ($this->count > 5) {
+                die('overflow');
+            }
+
             return match ($this->count++) {
                 0 => 'H',
                 1 => 'e',
-                2 => 'l',
-                3 => 'l',
-                4 => 'o',
-                5 => \random_bytes(32), // 128-bit
+                2 => 'll',
+                3 => 'o',
+                4 => 'abcdefghijklmnopqrstuvwxyz', // 208 bits
+                5 => 'success',
                 default => \random_bytes(16),
             };
         }
     }
 );
 
-if ($randomizer->getBytes(5) !== 'Hello') {
-    die('failure');
-}
+echo $randomizer->getBytes(5) . PHP_EOL; // Hello
 
-$randomizer->getBytes(6);
+echo $randomizer->getBytes(8) . PHP_EOL; // abcdefgh (64 bits)
 
-die('success');
+die($randomizer->getBytes(7));
+
 ?>
 --EXPECTF--
+Hello
+abcdefgh
 success
