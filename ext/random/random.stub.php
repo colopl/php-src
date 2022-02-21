@@ -27,7 +27,7 @@ namespace {
 
 namespace Random\Engine
 {
-    class CombinedLCG implements Random\Engine
+    class CombinedLCG implements Random\SeedableEngine, Random\SerializableEngine
     {
         public function __construct(int $seed) {}
 
@@ -40,7 +40,7 @@ namespace Random\Engine
         public function __debugInfo(): array {}
     }
 
-    class MersenneTwister implements Random\Engine
+    class MersenneTwister implements Random\SeedableEngine, Random\SerializableEngine
     {
         public function __construct(int $seed, int $mode = MT_RAND_MT19937) {}
 
@@ -58,20 +58,20 @@ namespace Random\Engine
     }
 
     /** @not-serializable */
-    class Secure implements Random\Engine
+    class Secure implements Random\CryptoSafeEngine
     {
-        public function __construct() {}
-
         /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}
     }
 
-    class XorShift128Plus implements Random\Engine
+    class XorShift128Plus implements Random\SeedableEngine, Random\SerializableEngine
     {
         public function __construct(string|int $seed) {}
 
         /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}
+
+        public function jump(): void {}
 
         /** @implementation-alias Random\Engine\CombinedLCG::__serialize */
         public function __serialize(): array {}
@@ -83,12 +83,16 @@ namespace Random\Engine
         public function __debugInfo(): array {}
     }
 
-    class Xoshiro256StarStar implements Random\Engine
+    class Xoshiro256StarStar implements Random\SeedableEngine, Random\SerializableEngine
     {
         public function __construct(string|int $seed) {}
 
         /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}
+
+        public function jump(): void {}
+
+        public function jumpLong(): void {}
 
         /** @implementation-alias Random\Engine\CombinedLCG::__serialize */
         public function __serialize(): array {}
@@ -106,6 +110,23 @@ namespace Random
     interface Engine
     {
         public function generate(): string;
+    }
+
+    interface CryptoSafeEngine extends Engine
+    {
+    }
+
+    interface SeedableEngine extends Engine
+    {
+    }
+
+    interface SerializableEngine extends Engine
+    {
+        public function __serialize(): array {}
+
+        public function __unserialize(array $data): void {}
+
+        public function __debugInfo(): array {}
     }
 
     final class Randomizer
