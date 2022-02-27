@@ -1513,7 +1513,7 @@ PHP_METHOD(Random_Engine_XorShift128Plus, jump)
 
 	for (i = 0; i < sizeof (jmp) / sizeof (*jmp); i++) {
 		for (j = 0; j < 64; j++) {
-			if (jmp[i] & UINT64_C(1) << j) {
+			if (jmp[i] & 1ULL << j) {
 				s0 ^= s->s[0];
 				s1 ^= s->s[1];
 			}
@@ -1613,7 +1613,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, jumpLong)
 
 	for (i = 0; i < sizeof(jmp) / sizeof(*jmp); i++) {
 		for (j = 0; j < 64; j++) {
-			if (jmp[i] & UINT64_C(1) << j) {
+			if (jmp[i] & 1ULL << j) {
 				s0 ^= s->s[0];
 				s1 ^= s->s[1];
 				s2 ^= s->s[2];
