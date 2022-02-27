@@ -29,7 +29,7 @@ for ($i = 0; $i < 1000; $i++) {
 
 ?>
 --EXPECTF--
-Random\Engine\XorShift128Plus::__construct(): Argument #1 ($seed) must be of type string|int, float given
+Random\Engine\XorShift128Plus::__construct(): Argument #1 ($seed) must be of type string|int|null, float given
 Random\Engine\XorShift128Plus::__construct(): Argument #1 ($seed) state strings must be 16 bytes
 object(Random\Engine\XorShift128Plus)#%d (%d) {
   ["__states"]=>
