@@ -21,6 +21,15 @@ for ($i = 0; $i < 1000; $i++) {
     }
 }
 
+$native_engine = new \Random\Engine\PCG64(1234);
+$user_engine = new class (1234) extends \Random\Engine\PCG64 {};
+
+for ($i = 0; $i < 1000; $i++) {
+    if ($native_engine->generate() !== $user_engine->generate()) {
+        die('failure PCG64');
+    }
+}
+
 $native_engine = new \Random\Engine\XorShift128Plus(1234);
 $user_engine = new class (1234) extends \Random\Engine\XorShift128Plus {};
 

@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: d4414e9eb5d3fd2bc7c8c2c41ae169e823711341 */
+ * Stub hash: ebab329eeeafe1b609c74aa7bb48f2069f3763da */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -61,11 +61,25 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_Engine_MersenneTwister___debugInfo arginfo_class_Random_Engine_CombinedLCG___serialize
 
-#define arginfo_class_Random_Engine_Secure_generate arginfo_class_Random_Engine_CombinedLCG_generate
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_XorShift128Plus___construct, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_PCG64___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_MASK(0, seed, MAY_BE_STRING|MAY_BE_LONG|MAY_BE_NULL, "null")
 ZEND_END_ARG_INFO()
+
+#define arginfo_class_Random_Engine_PCG64_generate arginfo_class_Random_Engine_CombinedLCG_generate
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_Engine_PCG64_jump, 0, 1, IS_VOID, 0)
+	ZEND_ARG_TYPE_INFO(0, advance, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
+#define arginfo_class_Random_Engine_PCG64___serialize arginfo_class_Random_Engine_CombinedLCG___serialize
+
+#define arginfo_class_Random_Engine_PCG64___unserialize arginfo_class_Random_Engine_CombinedLCG___unserialize
+
+#define arginfo_class_Random_Engine_PCG64___debugInfo arginfo_class_Random_Engine_CombinedLCG___serialize
+
+#define arginfo_class_Random_Engine_Secure_generate arginfo_class_Random_Engine_CombinedLCG_generate
+
+#define arginfo_class_Random_Engine_XorShift128Plus___construct arginfo_class_Random_Engine_PCG64___construct
 
 #define arginfo_class_Random_Engine_XorShift128Plus_generate arginfo_class_Random_Engine_CombinedLCG_generate
 
@@ -78,7 +92,7 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_Engine_XorShift128Plus___debugInfo arginfo_class_Random_Engine_CombinedLCG___serialize
 
-#define arginfo_class_Random_Engine_Xoshiro256StarStar___construct arginfo_class_Random_Engine_XorShift128Plus___construct
+#define arginfo_class_Random_Engine_Xoshiro256StarStar___construct arginfo_class_Random_Engine_PCG64___construct
 
 #define arginfo_class_Random_Engine_Xoshiro256StarStar_generate arginfo_class_Random_Engine_CombinedLCG_generate
 
@@ -136,6 +150,8 @@ ZEND_METHOD(Random_Engine_CombinedLCG, __serialize);
 ZEND_METHOD(Random_Engine_CombinedLCG, __unserialize);
 ZEND_METHOD(Random_Engine_CombinedLCG, __debugInfo);
 ZEND_METHOD(Random_Engine_MersenneTwister, __construct);
+ZEND_METHOD(Random_Engine_PCG64, __construct);
+ZEND_METHOD(Random_Engine_PCG64, jump);
 ZEND_METHOD(Random_Engine_XorShift128Plus, __construct);
 ZEND_METHOD(Random_Engine_XorShift128Plus, jump);
 ZEND_METHOD(Random_Engine_Xoshiro256StarStar, __construct);
@@ -180,6 +196,17 @@ static const zend_function_entry class_Random_Engine_MersenneTwister_methods[] =
 	ZEND_MALIAS(Random_Engine_CombinedLCG, __serialize, __serialize, arginfo_class_Random_Engine_MersenneTwister___serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_CombinedLCG, __unserialize, __unserialize, arginfo_class_Random_Engine_MersenneTwister___unserialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(Random_Engine_CombinedLCG, __debugInfo, __debugInfo, arginfo_class_Random_Engine_MersenneTwister___debugInfo, ZEND_ACC_PUBLIC)
+	ZEND_FE_END
+};
+
+
+static const zend_function_entry class_Random_Engine_PCG64_methods[] = {
+	ZEND_ME(Random_Engine_PCG64, __construct, arginfo_class_Random_Engine_PCG64___construct, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(Random_Engine_CombinedLCG, generate, generate, arginfo_class_Random_Engine_PCG64_generate, ZEND_ACC_PUBLIC)
+	ZEND_ME(Random_Engine_PCG64, jump, arginfo_class_Random_Engine_PCG64_jump, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(Random_Engine_CombinedLCG, __serialize, __serialize, arginfo_class_Random_Engine_PCG64___serialize, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(Random_Engine_CombinedLCG, __unserialize, __unserialize, arginfo_class_Random_Engine_PCG64___unserialize, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(Random_Engine_CombinedLCG, __debugInfo, __debugInfo, arginfo_class_Random_Engine_PCG64___debugInfo, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
 };
 
@@ -264,6 +291,17 @@ static zend_class_entry *register_class_Random_Engine_MersenneTwister(zend_class
 	zend_class_entry ce, *class_entry;
 
 	INIT_NS_CLASS_ENTRY(ce, "Random\\Engine", "MersenneTwister", class_Random_Engine_MersenneTwister_methods);
+	class_entry = zend_register_internal_class_ex(&ce, NULL);
+	zend_class_implements(class_entry, 2, class_entry_Random_Engine_Random_SeedableEngine, class_entry_Random_Engine_Random_SerializableEngine);
+
+	return class_entry;
+}
+
+static zend_class_entry *register_class_Random_Engine_PCG64(zend_class_entry *class_entry_Random_Engine_Random_SeedableEngine, zend_class_entry *class_entry_Random_Engine_Random_SerializableEngine)
+{
+	zend_class_entry ce, *class_entry;
+
+	INIT_NS_CLASS_ENTRY(ce, "Random\\Engine", "PCG64", class_Random_Engine_PCG64_methods);
 	class_entry = zend_register_internal_class_ex(&ce, NULL);
 	zend_class_implements(class_entry, 2, class_entry_Random_Engine_Random_SeedableEngine, class_entry_Random_Engine_Random_SerializableEngine);
 
