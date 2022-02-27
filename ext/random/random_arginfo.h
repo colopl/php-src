@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 5a7e5078af5896788f35d9c33fe10ef2079648e2 */
+ * Stub hash: d4414e9eb5d3fd2bc7c8c2c41ae169e823711341 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -32,8 +32,8 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_random_int, 0, 2, IS_LONG, 0)
 	ZEND_ARG_TYPE_INFO(0, max, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_CombinedLCG___construct, 0, 0, 1)
-	ZEND_ARG_TYPE_INFO(0, seed, IS_LONG, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_CombinedLCG___construct, 0, 0, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, seed, IS_LONG, 1, "null")
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_Engine_CombinedLCG_generate, 0, 0, IS_STRING, 0)
@@ -48,8 +48,8 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_Engine_CombinedLCG___debugInfo arginfo_class_Random_Engine_CombinedLCG___serialize
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_MersenneTwister___construct, 0, 0, 1)
-	ZEND_ARG_TYPE_INFO(0, seed, IS_LONG, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_MersenneTwister___construct, 0, 0, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, seed, IS_LONG, 1, "null")
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, 0, "MT_RAND_MT19937")
 ZEND_END_ARG_INFO()
 
@@ -63,8 +63,8 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_Engine_Secure_generate arginfo_class_Random_Engine_CombinedLCG_generate
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_XorShift128Plus___construct, 0, 0, 1)
-	ZEND_ARG_TYPE_MASK(0, seed, MAY_BE_STRING|MAY_BE_LONG, NULL)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_XorShift128Plus___construct, 0, 0, 0)
+	ZEND_ARG_TYPE_MASK(0, seed, MAY_BE_STRING|MAY_BE_LONG|MAY_BE_NULL, "null")
 ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_Engine_XorShift128Plus_generate arginfo_class_Random_Engine_CombinedLCG_generate

@@ -29,7 +29,7 @@ namespace Random\Engine
 {
     class CombinedLCG implements Random\SeedableEngine, Random\SerializableEngine
     {
-        public function __construct(int $seed) {}
+        public function __construct(int|null $seed = null) {}
 
         public function generate(): string {}
 
@@ -42,7 +42,7 @@ namespace Random\Engine
 
     class MersenneTwister implements Random\SeedableEngine, Random\SerializableEngine
     {
-        public function __construct(int $seed, int $mode = MT_RAND_MT19937) {}
+        public function __construct(int|null $seed = null, int $mode = MT_RAND_MT19937) {}
 
         /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}
@@ -66,7 +66,7 @@ namespace Random\Engine
 
     class XorShift128Plus implements Random\SeedableEngine, Random\SerializableEngine
     {
-        public function __construct(string|int $seed) {}
+        public function __construct(string|int|null $seed = null) {}
 
         /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}
@@ -85,7 +85,7 @@ namespace Random\Engine
 
     class Xoshiro256StarStar implements Random\SeedableEngine, Random\SerializableEngine
     {
-        public function __construct(string|int $seed) {}
+        public function __construct(string|int|null $seed = null) {}
 
         /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}

@@ -1285,13 +1285,29 @@ PHP_FUNCTION(random_int)
 PHP_METHOD(Random_Engine_CombinedLCG, __construct)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	php_random_engine_state_combinedlcg *state = engine->state;
 	zend_long seed;
+	bool seed_is_null = true;
 	
-	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_LONG(seed)
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL;
+		Z_PARAM_LONG_OR_NULL(seed, seed_is_null);
 	ZEND_PARSE_PARAMETERS_END();
 
-	engine->algo->seed(engine->state, seed);
+	if (seed_is_null) {
+		int i;
+
+		for (i = 0; i < 2; i++) {
+			if (php_random_bytes_silent(&state->s[i], sizeof(int32_t)) == FAILURE) {
+				zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+				RETURN_THROWS();
+			}
+		}
+
+		state->seeded = true;
+	} else {
+		engine->algo->seed(engine->state, seed);
+	}
 }
 /* }}} */
 
@@ -1412,11 +1428,12 @@ PHP_METHOD(Random_Engine_MersenneTwister, __construct)
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
 	php_random_engine_state_mersennetwister *state = engine->state;
 	zend_long seed, mode = MT_RAND_MT19937;
+	bool seed_is_null = true;
 
-	ZEND_PARSE_PARAMETERS_START(1, 2)
-		Z_PARAM_LONG(seed);
+	ZEND_PARSE_PARAMETERS_START(0, 2)
 		Z_PARAM_OPTIONAL;
-		Z_PARAM_LONG(mode)
+		Z_PARAM_LONG_OR_NULL(seed, seed_is_null);
+		Z_PARAM_LONG(mode);
 	ZEND_PARSE_PARAMETERS_END();
 
 	switch (mode) {
@@ -1425,6 +1442,14 @@ PHP_METHOD(Random_Engine_MersenneTwister, __construct)
 			break;
 		default:
 			state->mode = MT_RAND_MT19937;
+	}
+
+	if (seed_is_null) {
+		/* MT19937 has a very large state, uses CSPRNG for seeding only */
+		if (php_random_bytes_silent(&seed, sizeof(zend_long)) == FAILURE) {
+			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+			RETURN_THROWS();
+		}
 	}
 
 	engine->algo->seed(engine->state, seed);
@@ -1438,28 +1463,39 @@ PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
 	php_random_engine_state_xorshift128plus *state = engine->state;
 	zend_string *str_seed = NULL;
 	zend_long int_seed = 0;
+	bool seed_is_null = true;
 	int i, j;
 	
-	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_STR_OR_LONG(str_seed, int_seed)
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL;
+		Z_PARAM_STR_OR_LONG_OR_NULL(str_seed, int_seed, seed_is_null);
 	ZEND_PARSE_PARAMETERS_END();
-	
-	if (str_seed) {
-		/* char (8 bit) * 16 = 128 bits */
-		if (str_seed->len == 16) {
-			/* Endianness safe copy */
-			for (i = 0; i < 2; i++) {
-				state->s[i] = 0;
-				for (j = 0; j < 8; j++) {
-					state->s[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
-				}
+
+	if (seed_is_null) {
+		for (i = 0; i < 2; i++) {
+			if (php_random_bytes_silent(&state->s[i], sizeof(uint64_t)) == FAILURE) {
+				zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+				RETURN_THROWS();
 			}
-		}  else {
-			zend_argument_value_error(1, "state strings must be 16 bytes");
-			RETURN_THROWS();
 		}
 	} else {
-		engine->algo->seed(state, int_seed);
+		if (str_seed) {
+			/* char (8 bit) * 16 = 128 bits */
+			if (str_seed->len == 16) {
+				/* Endianness safe copy */
+				for (i = 0; i < 2; i++) {
+					state->s[i] = 0;
+					for (j = 0; j < 8; j++) {
+						state->s[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
+					}
+				}
+			} else {
+				zend_argument_value_error(1, "state strings must be 16 bytes");
+				RETURN_THROWS();
+			}
+		} else {
+			engine->algo->seed(state, int_seed);
+		}
 	}
 }
 /* }}} */
@@ -1497,28 +1533,39 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 	php_random_engine_state_xoshiro256starstar *state = engine->state;
 	zend_string *str_seed = NULL;
 	zend_long int_seed = 0;
+	bool seed_is_null = true;
 	int i, j;
 	
-	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_STR_OR_LONG(str_seed, int_seed)
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL;
+		Z_PARAM_STR_OR_LONG_OR_NULL(str_seed, int_seed, seed_is_null);
 	ZEND_PARSE_PARAMETERS_END();
 	
-	if (str_seed) {
-		/* char (8 bit) * 32 = 256 bits */
-		if (str_seed->len == 32) {
-			/* Endianness safe copy */
-			for (i = 0; i < 4; i++) {
-				state->s[i] = 0;
-				for (j = 0; j < 8; j++) {
-					state->s[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
-				}
+	if (seed_is_null) {
+		for (i = 0; i < 4; i++) {
+			if (php_random_bytes_silent(&state->s[i], sizeof(uint64_t)) == FAILURE) {
+				zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+				RETURN_THROWS();
 			}
-		}  else {
-			zend_argument_value_error(1, "state strings must be 32 bytes");
-			RETURN_THROWS();
 		}
 	} else {
-		engine->algo->seed(state, int_seed);
+		if (str_seed) {
+			/* char (8 bit) * 32 = 256 bits */
+			if (str_seed->len == 32) {
+				/* Endianness safe copy */
+				for (i = 0; i < 4; i++) {
+					state->s[i] = 0;
+					for (j = 0; j < 8; j++) {
+						state->s[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
+					}
+				}
+			}  else {
+				zend_argument_value_error(1, "state strings must be 32 bytes");
+				RETURN_THROWS();
+			}
+		} else {
+			engine->algo->seed(state, int_seed);
+		}
 	}
 }
 /* }}} */
@@ -1536,7 +1583,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, jump)
 
 	for (i = 0; i < sizeof(jmp) / sizeof(*jmp); i++) {
 		for (j = 0; j < 64; j++) {
-			if (jmp[i] & UINT64_C(1) << j) {
+			if (jmp[i] & 1ULL << j) {
 				s0 ^= s->s[0];
 				s1 ^= s->s[1];
 				s2 ^= s->s[2];
@@ -1599,11 +1646,6 @@ PHP_METHOD(Random_Randomizer, __construct)
 	/* Create default RNG instance */
 	if (!engine_object) {
 		engine_object = php_random_engine_secure_new(random_ce_Random_Engine_Secure);
-		zend_call_known_instance_method_with_0_params(
-			random_ce_Random_Engine_Secure->constructor,
-			engine_object,
-			NULL
-		);
 
 		/* No need self-refcount */
 		GC_DELREF(engine_object);
