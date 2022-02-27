@@ -1481,7 +1481,7 @@ PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
 	} else {
 		if (str_seed) {
 			/* char (8 bit) * 16 = 128 bits */
-			if (str_seed->len == 16) {
+			if (ZSTR_LEN(str_seed) == 16) {
 				/* Endianness safe copy */
 				for (i = 0; i < 2; i++) {
 					state->s[i] = 0;
@@ -1551,7 +1551,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 	} else {
 		if (str_seed) {
 			/* char (8 bit) * 32 = 256 bits */
-			if (str_seed->len == 32) {
+			if (ZSTR_LEN(str_seed) == 32) {
 				/* Endianness safe copy */
 				for (i = 0; i < 4; i++) {
 					state->s[i] = 0;
