@@ -85,14 +85,15 @@
 # define php_random_int_silent(min, max, result) \
 	php_random_int((min), (max), (result), 0)
 
-# define RANDOM_ENGINE_GENERATE_SIZE(algo, state, result, generated_size)	\
+# define RANDOM_ENGINE_GENERATE(algo, state, result, generated_size, rng_unsafe)	\
 	do { \
-		result = algo->generate(state); \
+		result = algo->generate(state, rng_unsafe); \
 		generated_size = algo->static_generate_size != 0 \
 			? algo->static_generate_size \
 			: algo->dynamic_generate_size(state) \
 		; \
 	} while (0);
+# define RANDOM_ENGINE_GENERATE_SILENT(algo, state, result, generate_size)	RANDOM_ENGINE_GENERATE(algo, state, result, generated_size, NULL)
 
 PHPAPI double php_combined_lcg(void);
 
@@ -108,19 +109,19 @@ PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw);
 PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool should_throw);
 
 typedef struct _php_random_engine_algo {
-	const size_t static_generate_size;					/* Specifies the generated size. if the generated size is to be changed dynamically to set 0. */
-	size_t (*dynamic_generate_size)(void *state);		/* Pointer to get the dynamic generation size. non-nullable. */
-	const size_t state_size;							/* Size of the structure to hold the state. if not needed to set 0. */
-	uint64_t (*generate)(void *state);					/* Pointer to get random number. non-nullable. */
-	void (*seed)(void *state, const uint64_t seed);		/* Pointer to seeding state. nullable. */
-	int (*serialize)(void *state, HashTable *data);		/* Pointer to serialize state. nullable. */
-	int (*unserialize)(void *state, HashTable *data);	/* Pointer to unserialize state. nullable. */
+	const size_t static_generate_size;						/* Specifies the generated size. if the generated size is to be changed dynamically to set 0. */
+	size_t (*dynamic_generate_size)(void *state);			/* Pointer to get the dynamic generation size. non-nullable. */
+	const size_t state_size;								/* Size of the structure to hold the state. if not needed to set 0. */
+	uint64_t (*generate)(void *state, bool *rng_unsafe);	/* Pointer to get random number. non-nullable. */
+	void (*seed)(void *state, const uint64_t seed);			/* Pointer to seeding state. nullable. */
+	int (*serialize)(void *state, HashTable *data);			/* Pointer to serialize state. nullable. */
+	int (*unserialize)(void *state, HashTable *data);		/* Pointer to unserialize state. nullable. */
 } php_random_engine_algo;
 
 PHPAPI const php_random_engine_algo *php_random_engine_get_default_algo(void);
 PHPAPI void *php_random_engine_get_default_state(void);
 
-PHPAPI zend_long php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max);
+PHPAPI zend_long php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *rng_unsafe);
 
 extern zend_module_entry random_module_entry;
 # define phpext_random_ptr &random_module_entry
