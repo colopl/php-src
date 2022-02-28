@@ -1858,12 +1858,12 @@ PHP_METHOD(Random_Randomizer, getInt)
 
 	if (argc == 0) {
 		// right shift for compatibility
-		result = (zend_long) randomizer->algo->generate(randomizer->state, &engine_unsafe);
+		result = (zend_long) (randomizer->algo->generate(randomizer->state, &engine_unsafe) >> 1);
 		if (engine_unsafe) {
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 			RETURN_THROWS();
 		}
-		RETURN_LONG(result >> 1);
+		RETURN_LONG(result);
 	}
 
 	ZEND_PARSE_PARAMETERS_START(2, 2)
