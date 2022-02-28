@@ -575,30 +575,6 @@ static inline void mersennetwister_reload(php_random_engine_state_mersennetwiste
 	state->cnt = 0;
 }
 
-static uint64_t mersennetwister_generate(void *state, bool *engine_unsafe) {
-	php_random_engine_state_mersennetwister *s = state;
-	uint32_t s1;
-
-	if (!s->seeded) {
-		zend_long bytes;
-		if (php_random_bytes_silent(&bytes, sizeof(zend_long)) == FAILURE) {
-			bytes = GENERATE_SEED();
-		}
-		php_mt_srand(bytes);
-	}
-
-
-	if (s->cnt >= MT_N) {
-		mersennetwister_reload(s);
-	}
-
-	s1 = s->s[s->cnt++];
-	s1 ^= (s1 >> 11);
-	s1 ^= (s1 << 7) & 0x9d2c5680U;
-	s1 ^= (s1 << 15) & 0xefc60000U;
-	return (uint64_t) (s1 ^ (s1 >> 18));
-}
-
 static void mersennetwister_seed(void *state, const uint64_t seed) {
 	/* Initialize generator state with seed
 	   See Knuth TAOCP Vol 2, 3rd Ed, p.106 for multiplier.
@@ -614,6 +590,29 @@ static void mersennetwister_seed(void *state, const uint64_t seed) {
 
 	/* Seed only once */
 	s->seeded = true;
+}
+
+static uint64_t mersennetwister_generate(void *state, bool *engine_unsafe) {
+	php_random_engine_state_mersennetwister *s = state;
+	uint32_t s1;
+
+	if (!s->seeded) {
+		zend_long bytes;
+		if (php_random_bytes_silent(&bytes, sizeof(zend_long)) == FAILURE) {
+			bytes = GENERATE_SEED();
+		}
+		mersennetwister_seed(state, bytes);
+	}
+
+	if (s->cnt >= MT_N) {
+		mersennetwister_reload(s);
+	}
+
+	s1 = s->s[s->cnt++];
+	s1 ^= (s1 >> 11);
+	s1 ^= (s1 << 7) & 0x9d2c5680U;
+	s1 ^= (s1 << 15) & 0xefc60000U;
+	return (uint64_t) (s1 ^ (s1 >> 18));
 }
 
 static int mersennetwister_serialize(void *state, HashTable *data) {
@@ -1761,7 +1760,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 PHP_METHOD(Random_Engine_Xoshiro256StarStar, jump)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_engine_state_xoshiro256starstar *s = (php_random_engine_state_xoshiro256starstar *) engine->state;
+	php_random_engine_state_xoshiro256starstar *s = engine->state;
 	static const uint64_t jmp[] = { 0x180ec6d33cfd0aba, 0xd5a61266f0c9392c, 0xa9582618e03fc9aa, 0x39abdc4529b1661c };
 	uint64_t s0 = 0, s1 = 0, s2 = 0, s3 = 0;
 	int i, j;
