@@ -1,5 +1,5 @@
 --TEST--
-Random: Randomizer: User: RNG unsafe
+Random: Randomizer: User: Engine unsafe
 --FILE--
 <?php
 
@@ -19,6 +19,12 @@ try {
 }
 
 try {
+    $randomizer->getBytes(1);
+} catch (\RuntimeException $e) {
+    echo "catched\n";
+}
+
+try {
     $randomizer->shuffleArray(\range(1, 10));
 } catch (\RuntimeException $e) {
     echo "catched\n";
@@ -32,6 +38,7 @@ try {
 
 ?>
 --EXPECT--
+catched
 catched
 catched
 catched
