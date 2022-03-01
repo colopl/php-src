@@ -4,7 +4,7 @@ Random: Randomizer: readonly engine
 <?php
 
 $one = new \Random\Randomizer(
-    new \Random\Engine\Xoshiro256StarStar(1234)
+    new \Random\Engine\PCG64(1234)
 );
 
 $one_ng_clone = clone $one->engine;
