@@ -36,17 +36,6 @@ for ($i = 0; $i < 1000; $i++) {
     }
 }
 
-$native_randomizer = new \Random\Randomizer(new \Random\Engine\Xoshiro256StarStar(1234));
-$user_randomizer = new \Random\Randomizer(new class (1234) extends \Random\Engine\Xoshiro256StarStar {});
-
-for ($i = 0; $i < 1000; $i++) {
-    $native = $native_randomizer->getInt();
-    $user = $user_randomizer->getInt();
-    if ($native !== $user) {
-        die("failure Xoshiro256StarStar i: ${i} native: ${native} user: ${user}");
-    }
-}
-
 die('success');
 ?>
 --EXPECT--

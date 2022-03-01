@@ -30,15 +30,6 @@ for ($i = 0; $i < 1000; $i++) {
     }
 }
 
-$native_engine = new \Random\Engine\Xoshiro256StarStar(1234);
-$user_engine = new class (1234) extends \Random\Engine\Xoshiro256StarStar {};
-
-for ($i = 0; $i < 1000; $i++) {
-    if ($native_engine->generate() !== $user_engine->generate()) {
-        die('failure Xoshiro256StarStar');
-    }
-}
-
 die('success');
 ?>
 --EXPECT--
