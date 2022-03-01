@@ -83,25 +83,6 @@ namespace Random\Engine
         public function generate(): string {}
     }
 
-    class XorShift128Plus implements Random\SeedableEngine, Random\SerializableEngine
-    {
-        public function __construct(string|int|null $seed = null) {}
-
-        /** @implementation-alias Random\Engine\CombinedLCG::generate */
-        public function generate(): string {}
-
-        public function jump(): void {}
-
-        /** @implementation-alias Random\Engine\CombinedLCG::__serialize */
-        public function __serialize(): array {}
-
-        /** @implementation-alias Random\Engine\CombinedLCG::__unserialize */
-        public function __unserialize(array $data): void {}
-
-        /** @implementation-alias Random\Engine\CombinedLCG::__debugInfo */
-        public function __debugInfo(): array {}
-    }
-
     class Xoshiro256StarStar implements Random\SeedableEngine, Random\SerializableEngine
     {
         public function __construct(string|int|null $seed = null) {}
@@ -156,7 +137,7 @@ namespace Random
 
         public function getInt(int $min = UNKNOWN, int $max = UNKNOWN): int {}
 
-        public function getBytes(int $legnth): string {}
+        public function getBytes(int $length): string {}
 
         public function shuffleArray(array $array): array {}
 

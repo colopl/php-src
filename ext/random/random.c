@@ -168,7 +168,6 @@ PHPAPI zend_class_entry *random_ce_Random_Engine_CombinedLCG;
 PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
 PHPAPI zend_class_entry *random_ce_Random_Engine_PCG64;
 PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
-PHPAPI zend_class_entry *random_ce_Random_Engine_XorShift128Plus;
 PHPAPI zend_class_entry *random_ce_Random_Engine_Xoshiro256StarStar;
 PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
@@ -176,7 +175,6 @@ static zend_object_handlers random_engine_combinedlcg_object_handlers;
 static zend_object_handlers random_engine_mersennetwister_object_handlers;
 static zend_object_handlers random_engine_pcg64_object_handlers;
 static zend_object_handlers random_engine_secure_object_handlers;
-static zend_object_handlers random_engine_xorshift128plus_object_handlers;
 static zend_object_handlers random_engine_xoshiro256starstar_object_handlers;
 static zend_object_handlers random_randomizer_object_handlers;
 
@@ -767,80 +765,6 @@ const php_random_engine_algo php_random_engine_algo_user = {
 };
 
 /* User end */
-
-/* XorShift128Plus begin */
-
-static inline size_t xorshift128plus_dynamic_generate_size(void *state) {
-	return sizeof(uint64_t);
-}
-
-static uint64_t xorshift128plus_generate(void *state, bool *engine_unsafe) {
-	php_random_engine_state_xorshift128plus *s = state;
-	uint64_t s0, s1, r;
-
-	s1 = s->s[0];
-	s0 = s->s[1];
-	r = s0 + s1;
-	s->s[0] = s0;
-	s1 ^= s1 << 23;
-	s->s[1] = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
-
-	return r;
-}
-
-static void xorshift128plus_seed(void *state, const uint64_t seed) {
-	php_random_engine_state_xorshift128plus *s = state;
-	uint64_t sd = seed;
-
-	s->s[0] = splitmix64(&sd);
-	s->s[1] = splitmix64(&sd);
-}
-
-static int xorshift128plus_serialize(void *state, HashTable *data) {
-	php_random_engine_state_xorshift128plus *s = state;
-	zval tmp;
-	int i;
-
-	for (i = 0; i < 2; i++) {
-		ZVAL_STR(&tmp, zend_strpprintf(0, "%" PRIu64, s->s[i]));
-		zend_hash_next_index_insert(data, &tmp);
-	}
-
-	return SUCCESS;
-}
-
-static int xorshift128plus_unserialize(void *state, HashTable *data) {
-	php_random_engine_state_xorshift128plus *s = state;
-	zval *tmp;
-	int i;
-
-	for (i = 0; i < 2; i++) {
-		tmp = zend_hash_index_find(data, i);
-		if (!tmp || Z_TYPE_P(tmp) != IS_STRING) {
-			return FAILURE;
-		}
-
-		s->s[i] = strtoull(ZSTR_VAL(Z_STR_P(tmp)), NULL, 10);
-	}
-
-	return SUCCESS;
-}
-
-static zend_object *php_random_engine_xorshift128plus_new(zend_class_entry *ce) {
-	return php_random_engine_common_init(ce, &php_random_engine_algo_xorshift128plus, &random_engine_xorshift128plus_object_handlers);
-}
-
-const php_random_engine_algo php_random_engine_algo_xorshift128plus = {
-	sizeof(uint64_t),
-	xorshift128plus_dynamic_generate_size,
-	sizeof(php_random_engine_state_xorshift128plus),
-	xorshift128plus_generate,
-	xorshift128plus_seed,
-	xorshift128plus_serialize,
-	xorshift128plus_unserialize
-};
-
-/* XorShift128Plus end */
 
 /* Xoshiro256StarStar start */
 
@@ -1643,76 +1567,6 @@ PHP_METHOD(Random_Engine_PCG64, jump)
 /* }}} */
 
 /* {{{ Construct object */
-PHP_METHOD(Random_Engine_XorShift128Plus, __construct)
-{
-	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_engine_state_xorshift128plus *state = engine->state;
-	zend_string *str_seed = NULL;
-	zend_long int_seed = 0;
-	bool seed_is_null = true;
-	int i, j;
-	
-	ZEND_PARSE_PARAMETERS_START(0, 1)
-		Z_PARAM_OPTIONAL;
-		Z_PARAM_STR_OR_LONG_OR_NULL(str_seed, int_seed, seed_is_null);
-	ZEND_PARSE_PARAMETERS_END();
-
-	if (seed_is_null) {
-		for (i = 0; i < 2; i++) {
-			if (php_random_bytes_silent(&state->s[i], sizeof(uint64_t)) == FAILURE) {
-				zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
-				RETURN_THROWS();
-			}
-		}
-	} else {
-		if (str_seed) {
-			/* char (8 bit) * 16 = 128 bits */
-			if (ZSTR_LEN(str_seed) == 16) {
-				/* Endianness safe copy */
-				for (i = 0; i < 2; i++) {
-					state->s[i] = 0;
-					for (j = 0; j < 8; j++) {
-						state->s[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
-					}
-				}
-			} else {
-				zend_argument_value_error(1, "state strings must be 16 bytes");
-				RETURN_THROWS();
-			}
-		} else {
-			engine->algo->seed(state, int_seed);
-		}
-	}
-}
-/* }}} */
-
-/* {{{ Jump a state */
-PHP_METHOD(Random_Engine_XorShift128Plus, jump)
-{
-	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_engine_state_xorshift128plus *s = engine->state;
-	static const uint64_t jmp[] = { 0x8a5cd789635d2dff, 0x121fd2155c472f96 };
-	uint64_t s0 = 0, s1 = 0;
-	int i, j;
-
-	ZEND_PARSE_PARAMETERS_NONE();
-
-	for (i = 0; i < sizeof (jmp) / sizeof (*jmp); i++) {
-		for (j = 0; j < 64; j++) {
-			if (jmp[i] & 1ULL << j) {
-				s0 ^= s->s[0];
-				s1 ^= s->s[1];
-			}
-			engine->algo->generate(engine->state, NULL);
-		}
-	}
-
-	s->s[0] = s0;
-	s->s[1] = s1;
-}
-/* }}} */
-
-/* {{{ Construct object */
 PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
@@ -2060,15 +1914,7 @@ PHP_MINIT_FUNCTION(random)
 	random_engine_secure_object_handlers.offset = XtOffsetOf(php_random_engine, std);
 	random_engine_secure_object_handlers.free_obj = php_random_engine_common_free_obj;
 	random_engine_secure_object_handlers.clone_obj = NULL;
-
-	/* Random\Engine\XorShift128Plus */
-	random_ce_Random_Engine_XorShift128Plus = register_class_Random_Engine_XorShift128Plus(random_ce_Random_SeedableEngine, random_ce_Random_SerializableEngine);
-	random_ce_Random_Engine_XorShift128Plus->create_object = php_random_engine_xorshift128plus_new;
-	memcpy(&random_engine_xorshift128plus_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	random_engine_xorshift128plus_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_xorshift128plus_object_handlers.free_obj = php_random_engine_common_free_obj;
-	random_engine_xorshift128plus_object_handlers.clone_obj = php_random_engine_common_clone_obj;
-
+	
 	/* Random\Engine\Xoshiro256StarStar */
 	random_ce_Random_Engine_Xoshiro256StarStar = register_class_Random_Engine_Xoshiro256StarStar(random_ce_Random_SeedableEngine, random_ce_Random_SerializableEngine);
 	random_ce_Random_Engine_Xoshiro256StarStar->create_object = php_random_engine_xoshiro256starstar_new;
