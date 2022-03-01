@@ -24,6 +24,7 @@
    |                     Shawn Cokus <Cokus@math.washington.edu>          |
    |                     David Blackman                                   |
    |                     Sebastiano Vigna <vigna@acm.org>                 |
+   |                     Melissa O'Neill <oneill@pcg-random.org>          |
    +----------------------------------------------------------------------+
 */
 #ifndef PHP_RANDOM_H
@@ -85,6 +86,62 @@
 # define php_random_int_silent(min, max, result) \
 	php_random_int((min), (max), (result), 0)
 
+# if !defined(__SIZEOF_INT128__) || defined(FORCE_EMULATE_128)
+#  define RANDOM_PCG64_EMULATED
+typedef struct _random_uint128_t {
+	uint64_t hi;
+	uint64_t lo;
+} random_uint128_t;
+#  define UINT128_HI64(value)	value.hi;
+#  define UINT128_LO64(value)	value.lo;
+#  define UINT128_CON(x, y, result)	\
+	do { \
+		result.hi = x; \
+		result.lo = y; \
+	} while (0);
+#  define UINT128_ADD(x, y, result)	\
+	do { \
+		const uint64_t _lo = (x.lo + y.lo), _hi = (x.hi + y.hi + (_lo < x.lo)); \
+		result.hi = _hi; \
+		result.lo = _lo; \
+	} while (0);
+#  define UINT128_MUL(x, y, result)	\
+	do { \
+		const uint64_t \
+			_x0 = x.lo & 0xffffffffULL, \
+			_x1 = x.lo >> 32, \
+			_y0 = y.lo & 0xffffffffULL, \
+			_y1 = y.lo >> 32, \
+			_z0 = ((_x1 * _y0 + (_x0 * _y0 >> 32)) & 0xffffffffULL) + _x0 * _y1; \
+		result.hi = x.hi * y.lo + x.lo * y.hi; \
+		result.lo = x.lo * y.lo; \
+		result.hi += _x1 * _y1 + ((_x1 * _y0 + (_x0 * _y0 >> 32)) >> 32) + (_z0 >> 32); \
+	} while (0);
+#  define PCG64_ROTL1OR1(x, result)	\
+	do { \
+		result.hi = x.hi << 1U | x.lo >> 63U; \
+		result.lo = x.lo << 1U | 1U; \
+	} while (0);
+#  define PCG64_ROTR64(x, result)	\
+	do { \
+		const uint64_t _v = (x.hi ^ x.lo), _s = x.hi >> 58U; \
+		result = (_v >> _s) | (_v << ((-_s) & 63)); \
+	} while (0);
+# else
+typedef __uint128_t random_uint128_t;
+#  define UINT128_HI64(value)	(uint64_t) (value >> 64);
+#  define UINT128_LO64(value)	(uint64_t) value;
+#  define UINT128_CON(x, y, result)	result = (((random_uint128_t) x << 64) + y);
+#  define UINT128_ADD(x, y, result)	result = x + y;
+#  define UINT128_MUL(x, y, result)	result = x * y;
+#  define PCG64_ROTL1OR1(x, result)	result = (x << 1U) | 1U;
+#  define PCG64_ROTR64(x, result)	\
+	do { \
+		uint64_t _v = ((uint64_t) (x >> 64U)) ^ (uint64_t) x, _s = x >> 122U; \
+		result = (_v >> _s) | (_v << ((-_s) & 63)); \
+	} while (0);
+# endif
+
 # define RANDOM_ENGINE_GENERATE(algo, state, result, generated_size, rng_unsafe)	\
 	do { \
 		result = algo->generate(state, rng_unsafe); \
@@ -132,15 +189,19 @@ extern PHPAPI zend_class_entry *random_ce_Random_SeedableEngine;
 extern PHPAPI zend_class_entry *random_ce_Random_SerializableEngine;
 
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_CombinedLCG;
+extern PHPAPI zend_class_entry *random_ce_Random_Engine_PCG64;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
+extern PHPAPI zend_class_entry *random_ce_Random_Engine_XorShift128Plus;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Xoshiro256StarStar;
 extern PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
 extern const php_random_engine_algo php_random_engine_algo_combinedlcg;
 extern const php_random_engine_algo php_random_engine_algo_mersennetwister;
+extern const php_random_engine_algo php_random_engine_algo_pcg64;
 extern const php_random_engine_algo php_random_engine_algo_secure;
 extern const php_random_engine_algo php_random_engine_algo_user;
+extern const php_random_engine_algo php_random_engine_algo_xorshift128plus;
 extern const php_random_engine_algo php_random_engine_algo_xoshiro256starstar;
 
 typedef struct _php_random_engine {
@@ -161,11 +222,20 @@ typedef struct _php_random_engine_state_mersennetwister {
 	bool seeded;
 } php_random_engine_state_mersennetwister;
 
+typedef struct _php_random_engine_state_pcg64 {
+	random_uint128_t s;
+	random_uint128_t inc;
+} php_random_engine_state_pcg64;
+
 typedef struct _php_random_engine_state_user {
 	zend_object *object;
 	zend_function *generate_method;
 	size_t last_generate_size;
 } php_random_engine_state_user;
+
+typedef struct _php_random_engine_state_xorshift128plus {
+	uint64_t s[2];
+} php_random_engine_state_xorshift128plus;
 
 typedef struct _php_random_engine_state_xoshiro256starstar {
 	uint64_t s[4];

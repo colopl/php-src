@@ -7,7 +7,9 @@ $engines = [];
 $engines[] = new Random\Engine\CombinedLCG(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
 $engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
+$engines[] = new Random\Engine\PCG64(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new Random\Engine\Secure(); 
+$engines[] = new Random\Engine\XorShift128Plus(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new Random\Engine\Xoshiro256StarStar(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $generate = \random_bytes(16);
 $engines[] = new class () implements Random\Engine {
@@ -50,7 +52,9 @@ die('success');
 Random\Engine\CombinedLCG: success
 Random\Engine\MersenneTwister: success
 Random\Engine\MersenneTwister: success
+Random\Engine\PCG64: success
 Serialization of 'Random\Engine\Secure' is not allowed
+Random\Engine\XorShift128Plus: success
 Random\Engine\Xoshiro256StarStar: success
 Serialization of 'Random\Engine@anonymous' is not allowed
 UserEngine: success
