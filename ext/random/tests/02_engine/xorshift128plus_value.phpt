@@ -9,7 +9,9 @@ for ($i = 0; $i < 10000; $i++) {
     $engine->generate();
 }
 
+$engine->jump();
+
 echo \bin2hex($engine->generate());
 ?>
 --EXPECT--
-9d932b4ba5427035
+33c167aa7ff25bbb
