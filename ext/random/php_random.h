@@ -192,7 +192,6 @@ extern PHPAPI zend_class_entry *random_ce_Random_Engine_CombinedLCG;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_PCG64;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
-extern PHPAPI zend_class_entry *random_ce_Random_Engine_XorShift128Plus;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Xoshiro256StarStar;
 extern PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
@@ -201,7 +200,6 @@ extern const php_random_engine_algo php_random_engine_algo_mersennetwister;
 extern const php_random_engine_algo php_random_engine_algo_pcg64;
 extern const php_random_engine_algo php_random_engine_algo_secure;
 extern const php_random_engine_algo php_random_engine_algo_user;
-extern const php_random_engine_algo php_random_engine_algo_xorshift128plus;
 extern const php_random_engine_algo php_random_engine_algo_xoshiro256starstar;
 
 typedef struct _php_random_engine {
@@ -232,10 +230,6 @@ typedef struct _php_random_engine_state_user {
 	zend_function *generate_method;
 	size_t last_generate_size;
 } php_random_engine_state_user;
-
-typedef struct _php_random_engine_state_xorshift128plus {
-	uint64_t s[2];
-} php_random_engine_state_xorshift128plus;
 
 typedef struct _php_random_engine_state_xoshiro256starstar {
 	uint64_t s[4];

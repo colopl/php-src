@@ -9,7 +9,6 @@ $engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_IN
 $engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
 $engines[] = new Random\Engine\PCG64(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new Random\Engine\Secure(); 
-$engines[] = new Random\Engine\XorShift128Plus(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new Random\Engine\Xoshiro256StarStar(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new class () implements Random\Engine {
     public function generate(): string
