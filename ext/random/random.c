@@ -1407,7 +1407,7 @@ PHP_METHOD(Random_Engine_PCG64, __construct)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (seed_is_null) {
-		if (php_random_bytes_silent(&state->inc, sizeof(random_uint128_t)) == FAILURE) {
+		if (php_random_bytes_silent(&state->s, sizeof(random_uint128_t)) == FAILURE) {
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 			RETURN_THROWS();
 		}
