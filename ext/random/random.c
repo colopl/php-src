@@ -179,6 +179,7 @@ static zend_object_handlers random_randomizer_object_handlers;
 static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, uint32_t umax, bool *engine_unsafe) {
 	uint32_t result, limit;
 	size_t generated_size;
+	uint32_t count;
 
 	RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generated_size, engine_unsafe);
 	while (generated_size < sizeof(uint32_t)) {
@@ -208,7 +209,15 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 	limit = UINT32_MAX - (UINT32_MAX % umax) - 1;
 
 	/* Discard numbers over the limit to avoid modulo bias */
+	count = 0;
 	while (UNEXPECTED(result > limit)) {
+		/* If the requirements cannot be met in a cycles, the engine is unsafe */
+		if (++count > 50) {
+			if (engine_unsafe != NULL) {
+				*engine_unsafe = true;
+			}
+			return 0;
+		}
 		RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generated_size, engine_unsafe);
 		while (generated_size < sizeof(uint32_t)) {
 			uint32_t ret;
@@ -229,6 +238,7 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, uint64_t umax, bool *engine_unsafe) {
 	uint64_t result, limit;
 	size_t generated_size;
+	uint32_t count;
 
 	RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generated_size, engine_unsafe);
 
@@ -260,7 +270,15 @@ static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, ui
 	limit = UINT64_MAX - (UINT64_MAX % umax) - 1;
 
 	/* Discard numbers over the limit to avoid modulo bias */
+	count = 0;
 	while (UNEXPECTED(result > limit)) {
+		/* If the requirements cannot be met in a cycles, the engine is unsafe */
+		if (++count > 50) {
+			if (engine_unsafe != NULL) {
+				*engine_unsafe = true;
+			}
+			return 0;
+		}
 		RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generated_size, engine_unsafe);
 
 		while (generated_size < sizeof(uint64_t)) {
