@@ -467,15 +467,26 @@ static uint64_t pcg64_generate(void *state, bool *engine_unsafe) {
 	return result;
 }
 
+static void pcg64_seed_full(php_random_engine_state_pcg64 *state) {
+	random_uint128_t initstate, initseq;
+
+	initstate = state->s;
+	initseq = state->inc;
+
+	UINT128_CON(0ULL, 0ULL, state->s);
+	PCG64_ROTL1OR1(initseq, state->inc);
+	pcg64_step(state);
+	UINT128_ADD(initstate, state->s, state->s);
+	pcg64_step(state);
+}
+
 static void pcg64_seed(void *state, const uint64_t seed) {
 	php_random_engine_state_pcg64 *s = state;
-	random_uint128_t sd;
 	
-	UINT128_CON(0ULL, seed, sd);
-	PCG64_ROTL1OR1(s->s, s->inc);
-	pcg64_step(s);
-	UINT128_ADD(sd, s->s, s->s);
-	pcg64_step(s);
+	UINT128_CON(0ULL, seed, s->s);
+	UINT128_CON(0ULL, 0ULL, s->inc);
+
+	pcg64_seed_full(s);
 }
 
 static int pcg64_serialize(void *state, HashTable *data) {
@@ -1413,16 +1424,36 @@ PHP_METHOD(Random_Engine_PCG64, __construct)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
 	php_random_engine_state_pcg64 *state = engine->state;
-	zend_string *str_seed = NULL;
-	zend_long int_seed = 0;
+	zend_string *str_seed = NULL, *str_seq = NULL;
+	zend_long int_seed = 0, int_seq = 0;
 	bool seed_is_null = true;
 	int i, j;
 	uint64_t t[2];
 
-	ZEND_PARSE_PARAMETERS_START(0, 1)
+	ZEND_PARSE_PARAMETERS_START(0, 2)
 		Z_PARAM_OPTIONAL;
 		Z_PARAM_STR_OR_LONG_OR_NULL(str_seed, int_seed, seed_is_null);
+		Z_PARAM_STR_OR_LONG(str_seq, int_seq);
 	ZEND_PARSE_PARAMETERS_END();
+
+	if (str_seq) {
+		/* char (8 bit) * 16 = 128 bits */
+		if (ZSTR_LEN(str_seq) == 16) {
+			/* Endianness safe copy */
+			for (i = 0; i < 2; i++) {
+				t[i] = 0;
+				for (j = 0; j < 8; j++) {
+					t[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seq)[(i * 8) + j]) << (j * 8);
+				}
+			}
+			UINT128_CON(t[0], t[1], state->inc);
+		} else {
+			zend_argument_value_error(2, "sequence strings must be 16 bytes");
+			RETURN_THROWS();
+		}
+	} else {
+		UINT128_CON(0ULL, int_seq, state->inc);
+	}
 
 	if (seed_is_null) {
 		if (php_random_bytes_silent(&state->s, sizeof(random_uint128_t)) == FAILURE) {
@@ -1441,14 +1472,15 @@ PHP_METHOD(Random_Engine_PCG64, __construct)
 					}
 				}
 				UINT128_CON(t[0], t[1], state->s);
-				UINT128_CON(0ULL, 0ULL, state->inc);
 			} else {
 				zend_argument_value_error(1, "state strings must be 16 bytes");
 				RETURN_THROWS();
 			}
 		} else {
-			engine->algo->seed(state, int_seed);
+			UINT128_CON(0ULL, int_seed, state->s);
 		}
+
+		pcg64_seed_full(state);
 	}
 }
 /* }}} */

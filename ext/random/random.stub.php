@@ -59,7 +59,7 @@ namespace Random\Engine
 
     class PCG64 implements Random\SeedableEngine, Random\SerializableEngine
     {
-        public function __construct(string|int|null $seed = null) {}
+        public function __construct(string|int|null $seed = null, string|int $seequence = 0) {}
 
         /** @implementation-alias Random\Engine\CombinedLCG::generate */
         public function generate(): string {}

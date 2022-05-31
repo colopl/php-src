@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 08434169eadaff969e4cd3b0c3c66b909f45fe81 */
+ * Stub hash: c1d50aee843582e2bebea3a515f47c28978a2a85 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -63,6 +63,7 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_PCG64___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_MASK(0, seed, MAY_BE_STRING|MAY_BE_LONG|MAY_BE_NULL, "null")
+	ZEND_ARG_TYPE_MASK(0, seequence, MAY_BE_STRING|MAY_BE_LONG, "0")
 ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_Engine_PCG64_generate arginfo_class_Random_Engine_CombinedLCG_generate
