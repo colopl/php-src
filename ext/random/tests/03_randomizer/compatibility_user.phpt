@@ -10,7 +10,7 @@ for ($i = 0; $i < 1000; $i++) {
     $native = $native_randomizer->getInt();
     $user = $user_randomizer->getInt();
     if ($native !== $user) {
-        die("failure CombinedLCG i: ${i} native: ${native} user: ${user}");
+        die("failure CombinedLCG i: {$i} native: {$native} user: {$user}");
     }
 }
 
@@ -21,7 +21,7 @@ for ($i = 0; $i < 1000; $i++) {
     $native = $native_randomizer->getInt();
     $user = $user_randomizer->getInt();
     if ($native !== $user) {
-        die("failure MersenneTwister i: ${i} native: ${native} user: ${user}");
+        die("failure MersenneTwister i: {$i} native: {$native} user: {$user}");
     }
 }
 
@@ -32,7 +32,7 @@ for ($i = 0; $i < 1000; $i++) {
     $native = $native_randomizer->getInt();
     $user = $user_randomizer->getInt();
     if ($native !== $user) {
-        die("failure PCG64 i: ${i} native: ${native} user: ${user}");
+        die("failure PCG64 i: {$i} native: {$native} user: {$user}");
     }
 }
 

@@ -38,7 +38,7 @@ foreach ($engines as $engine) {
     for ($i = 0; $i < 5000; $i++) {
         if ($engine->generate() !== $engine2->generate()) {
             $className = $engine::class;
-            die("failure class: ${className} i: ${i}");
+            die("failure class: {$className} i: {$i}");
         }
     }
 }
