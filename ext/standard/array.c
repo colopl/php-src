@@ -2894,7 +2894,7 @@ err:
 
 PHPAPI int php_array_data_shuffle(const php_random_engine_algo *algo, void *state, zval *array) /* {{{ */
 {
-	zend_long idx, j, n_elems, rnd_idx, n_left;
+	int64_t idx, j, n_elems, rnd_idx, n_left;
 	zval *zv, temp;
 	HashTable *hash;
 	bool rng_unsafe = false;

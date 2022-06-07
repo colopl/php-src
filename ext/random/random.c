@@ -234,7 +234,6 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 	return result % umax;
 }
 
-#if ZEND_ULONG_MAX > UINT32_MAX
 static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, uint64_t umax, bool *engine_unsafe) {
 	uint64_t result, limit;
 	size_t generated_size;
@@ -295,7 +294,6 @@ static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, ui
 
 	return result % umax;
 }
-#endif
 
 static inline zend_object *php_random_engine_common_init(zend_class_entry *ce, const php_random_engine_algo *algo, const zend_object_handlers *handlers) {
 	php_random_engine *engine = zend_object_alloc(sizeof(php_random_engine), ce);
@@ -865,7 +863,7 @@ PHPAPI uint32_t php_mt_rand(void)
 /* {{{ php_mt_rand_range */
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max)
 {
-	return php_random_engine_range(
+	return (zend_long) php_random_engine_range(
 		php_random_engine_get_default_algo(),
 		php_random_engine_get_default_state(),
 		min,
@@ -1077,9 +1075,15 @@ PHPAPI void *php_random_engine_get_default_state(void)
 /* }}} */
 
 /* {{{ php_random_engine_range */
-PHPAPI zend_long php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *engine_unsafe)
+PHPAPI int64_t php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *engine_unsafe)
 {
 	zend_ulong umax = max - min;
+
+	if ((algo->static_generate_size == 0 && sizeof(zend_long) > sizeof(uint32_t)) || algo->static_generate_size > sizeof(uint32_t) || umax > UINT32_MAX) {
+		return rand_range64(algo, state, umax, engine_unsafe) + min;
+	}
+
+	return ((int64_t) rand_range32(algo, state, umax, engine_unsafe)) + min;
 
 #if ZEND_ULONG_MAX > UINT32_MAX
 	/* user-land OR 64-bit RNG OR umax over 32-bit */
@@ -1582,7 +1586,7 @@ PHP_METHOD(Random_Randomizer, getInt)
 		RETURN_THROWS();
 	}
 
-	result = php_random_engine_range(randomizer->algo, randomizer->state, min, max, &engine_unsafe);
+	result = (zend_long) php_random_engine_range(randomizer->algo, randomizer->state, min, max, &engine_unsafe);
 	if (engine_unsafe) {
 		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 		RETURN_THROWS();
