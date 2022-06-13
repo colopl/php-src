@@ -234,7 +234,6 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 	return result % umax;
 }
 
-#if ZEND_ULONG_MAX > UINT32_MAX
 static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, uint64_t umax, bool *engine_unsafe) {
 	uint64_t result, limit;
 	size_t generated_size;
@@ -295,7 +294,6 @@ static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, ui
 
 	return result % umax;
 }
-#endif
 
 static inline zend_object *php_random_engine_common_init(zend_class_entry *ce, const php_random_engine_algo *algo, const zend_object_handlers *handlers) {
 	php_random_engine *engine = zend_object_alloc(sizeof(php_random_engine), ce);
