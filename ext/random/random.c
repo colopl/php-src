@@ -697,13 +697,13 @@ const php_random_engine_algo php_random_engine_algo_mersennetwister = {
 /* Secure begin */
 
 static inline size_t secure_dynamic_generate_size(void *state) {
-	return sizeof(uint64_t);
+	return sizeof(zend_ulong);
 }
 
 static uint64_t secure_generate(void *state, bool *engine_unsafe) {
 	uint64_t ret = 0;
 
-	if (php_random_bytes_silent(&ret, sizeof(uint64_t)) == FAILURE && engine_unsafe != NULL) {
+	if (php_random_bytes_silent(&ret, sizeof(zend_ulong)) == FAILURE && engine_unsafe != NULL) {
 		*engine_unsafe = true;
 	}
 
@@ -715,7 +715,7 @@ static zend_object *php_random_engine_secure_new(zend_class_entry *ce) {
 }
 
 const php_random_engine_algo php_random_engine_algo_secure = {
-	sizeof(uint64_t),
+	sizeof(zend_ulong),
 	secure_dynamic_generate_size,
 	0,
 	secure_generate,
