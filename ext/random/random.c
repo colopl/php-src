@@ -865,7 +865,7 @@ PHPAPI uint32_t php_mt_rand(void)
 /* {{{ php_mt_rand_range */
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max)
 {
-	return php_random_engine_range(
+	return (zend_long) php_random_engine_range(
 		php_random_engine_get_default_algo(),
 		php_random_engine_get_default_state(),
 		min,
@@ -1077,18 +1077,16 @@ PHPAPI void *php_random_engine_get_default_state(void)
 /* }}} */
 
 /* {{{ php_random_engine_range */
-PHPAPI zend_long php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *engine_unsafe)
+PHPAPI int64_t php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *engine_unsafe)
 {
 	zend_ulong umax = max - min;
 
-#if ZEND_ULONG_MAX > UINT32_MAX
-	/* user-land OR 64-bit RNG OR umax over 32-bit */
-	if (algo->static_generate_size == 0 || algo->static_generate_size > sizeof(uint32_t) || umax > UINT32_MAX) {
-		return (zend_long) rand_range64(algo, state, umax, engine_unsafe) + min;
+	/* (user-defined AND 64-bit ENV) OR 64-bit RNG OR umax over 32-bit range */
+	if ((algo->static_generate_size == 0 && sizeof(zend_long) > sizeof(uint32_t)) || algo->static_generate_size > sizeof(uint32_t) || umax > UINT32_MAX) {
+		return rand_range64(algo, state, umax, engine_unsafe) + min;
 	}
-#endif
 
-	return (zend_long) (rand_range32(algo, state, umax, engine_unsafe) + min);
+	return ((int64_t) rand_range32(algo, state, umax, engine_unsafe)) + min;
 }
 /* }}} */
 
@@ -1582,7 +1580,7 @@ PHP_METHOD(Random_Randomizer, getInt)
 		RETURN_THROWS();
 	}
 
-	result = php_random_engine_range(randomizer->algo, randomizer->state, min, max, &engine_unsafe);
+	result = (zend_long) php_random_engine_range(randomizer->algo, randomizer->state, min, max, &engine_unsafe);
 	if (engine_unsafe) {
 		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 		RETURN_THROWS();
