@@ -879,7 +879,7 @@ PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max)
  * rand() allows min > max, mt_rand does not */
 PHPAPI zend_long php_mt_rand_common(zend_long min, zend_long max)
 {
-	int64_t n;
+	uint64_t n;
 
 	if (RANDOM_G(mt).mode == MT_RAND_MT19937) {
 		return php_mt_rand_range(min, max);
@@ -887,7 +887,7 @@ PHPAPI zend_long php_mt_rand_common(zend_long min, zend_long max)
 
 	/* Legacy mode deliberately not inside php_mt_rand_range()
 	 * to prevent other functions being affected */
-	n = (int64_t) php_mt_rand() >> 1;
+	n = (uint64_t) php_mt_rand() >> 1;
 	RAND_RANGE_BADSCALING(n, min, max, PHP_MT_RAND_MAX);
 
 	return n;
@@ -1077,7 +1077,7 @@ PHPAPI void *php_random_engine_get_default_state(void)
 /* }}} */
 
 /* {{{ php_random_engine_range */
-PHPAPI int64_t php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *engine_unsafe)
+PHPAPI uint64_t php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *engine_unsafe)
 {
 	zend_ulong umax = max - min;
 
@@ -1086,7 +1086,7 @@ PHPAPI int64_t php_random_engine_range(const php_random_engine_algo *algo, void 
 		return rand_range64(algo, state, umax, engine_unsafe) + min;
 	}
 
-	return ((int64_t) rand_range32(algo, state, umax, engine_unsafe)) + min;
+	return ((uint64_t) rand_range32(algo, state, umax, engine_unsafe)) + min;
 }
 /* }}} */
 
@@ -1136,7 +1136,7 @@ PHP_FUNCTION(mt_rand)
 	int argc = ZEND_NUM_ARGS();
 
 	if (argc == 0) {
-		// genrand_int31 in mt19937ar.c performs a right shift
+		/* genrand_int31 in mt19937ar.c performs a right shift */
 		RETURN_LONG(php_mt_rand() >> 1);
 	}
 
@@ -1174,7 +1174,7 @@ PHP_FUNCTION(rand)
 	int argc = ZEND_NUM_ARGS();
 
 	if (argc == 0) {
-		// genrand_int31 in mt19937ar.c performs a right shift
+		/* genrand_int31 in mt19937ar.c performs a right shift */
 		RETURN_LONG(php_mt_rand() >> 1);
 	}
 
@@ -1556,18 +1556,23 @@ PHP_METHOD(Random_Randomizer, __construct)
 PHP_METHOD(Random_Randomizer, getInt)
 {
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
-	zend_long min, max, result;
+	uint64_t result;
+	zend_long min, max;
+	size_t generate_size = 0;
 	int argc = ZEND_NUM_ARGS();
 	bool engine_unsafe = false;
 
 	if (argc == 0) {
-		// right shift for compatibility
-		result = (zend_long) (randomizer->algo->generate(randomizer->state, &engine_unsafe) >> 1);
+		RANDOM_ENGINE_GENERATE(randomizer->algo, randomizer->state, result, generate_size, &engine_unsafe);
+		if (generate_size > sizeof(zend_long)) {
+			zend_throw_exception(spl_ce_RuntimeException, "Generated value exceeds size of int", 0);
+			RETURN_THROWS();
+		}
 		if (engine_unsafe) {
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 			RETURN_THROWS();
 		}
-		RETURN_LONG(result);
+		RETURN_LONG((zend_long) result >> 1);
 	}
 
 	ZEND_PARSE_PARAMETERS_START(2, 2)
@@ -1586,7 +1591,7 @@ PHP_METHOD(Random_Randomizer, getInt)
 		RETURN_THROWS();
 	}
 
-	RETURN_LONG(result);
+	RETURN_LONG((zend_long) result);
 }
 /* }}} */
 

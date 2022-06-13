@@ -178,7 +178,7 @@ typedef struct _php_random_engine_algo {
 PHPAPI const php_random_engine_algo *php_random_engine_get_default_algo(void);
 PHPAPI void *php_random_engine_get_default_state(void);
 
-PHPAPI int64_t php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *rng_unsafe);
+PHPAPI uint64_t php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *rng_unsafe);
 
 extern zend_module_entry random_module_entry;
 # define phpext_random_ptr &random_module_entry
