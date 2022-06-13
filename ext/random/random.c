@@ -1082,7 +1082,7 @@ PHPAPI int64_t php_random_engine_range(const php_random_engine_algo *algo, void 
 	zend_ulong umax = max - min;
 
 	/* (user-defined AND 64-bit ENV) OR 64-bit RNG OR umax over 32-bit range */
-	if ((algo->static_generate_size == 0 && sizeof(zend_long) > sizeof(uint32_t)) || algo->static_generate_size > sizeof(uint32_t) || umax > UINT32_MAX) {
+	if ((algo->static_generate_size == 0 && sizeof(zend_ulong) > sizeof(uint32_t)) || algo->static_generate_size > sizeof(uint32_t) || umax > UINT32_MAX) {
 		return rand_range64(algo, state, umax, engine_unsafe) + min;
 	}
 
