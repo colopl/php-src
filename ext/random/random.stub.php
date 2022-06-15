@@ -27,7 +27,7 @@ namespace {
 
 namespace Random\Engine
 {
-    class CombinedLCG implements Random\SeedableEngine, Random\SerializableEngine
+    class CombinedLCG implements \Random\SeedableEngine, \Random\SerializableEngine
     {
         public function __construct(int|null $seed = null) {}
 
