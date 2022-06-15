@@ -884,6 +884,28 @@ static void randomizer_common_init(php_random_randomizer *randomizer, zend_objec
 /* ---- Randomizer END ---- */
 
 /* ---- INTERNAL API BEGIN ---- */
+/* {{{ php_random_default_algo */
+PHPAPI const php_random_algo *php_random_default_algo(void)
+{
+	return &php_random_algo_mersennetwister;
+}
+/* }}} */
+
+/* {{{ php_random_default_status */
+PHPAPI php_random_status *php_random_default_status(void)
+{
+	php_random_status *status = RANDOM_G(mersennetwister);
+
+	if (!status) {
+		status = php_random_allocate_status(&php_random_algo_mersennetwister);
+		mersennetwister_seed_default(status);
+		RANDOM_G(mersennetwister) = status;
+	}
+
+	return RANDOM_G(mersennetwister);
+}
+/* }}} */
+
 /* {{{ php_combined_lcg */
 PHPAPI double php_combined_lcg(void)
 {
@@ -902,46 +924,22 @@ PHPAPI double php_combined_lcg(void)
 /* {{{ php_mt_srand */
 PHPAPI void php_mt_srand(uint32_t seed)
 {
-	php_random_status *status = RANDOM_G(mersennetwister);
-
-	if (!status) {
-		status = php_random_allocate_status(&php_random_algo_mersennetwister);
-		mersennetwister_seed_default(status);
-		RANDOM_G(mersennetwister) = status;
-	}
-
 	/* Seed the generator with a simple uint32 */
-	mersennetwister_seed(status, (zend_long) seed);
+	mersennetwister_seed(php_random_default_status(), (zend_long) seed);
 }
 /* }}} */
 
 /* {{{ php_mt_rand */
 PHPAPI uint32_t php_mt_rand(void)
 {
-	php_random_status *status = RANDOM_G(mersennetwister);
-
-	if (!status) {
-		status = php_random_allocate_status(&php_random_algo_mersennetwister);
-		mersennetwister_seed_default(status);
-		RANDOM_G(mersennetwister) = status;
-	}
-
-	return (uint32_t) php_random_algo_mersennetwister.generate(status);
+	return (uint32_t) php_random_algo_mersennetwister.generate(php_random_default_status());
 }
 /* }}} */
 
 /* {{{ php_mt_rand_range */
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max)
 {
-	php_random_status *status = RANDOM_G(mersennetwister);
-
-	if (!status) {
-		status = php_random_allocate_status(&php_random_algo_mersennetwister);
-		mersennetwister_seed_default(status);
-		RANDOM_G(mersennetwister) = status;
-	}
-
-	return php_random_algo_mersennetwister.range(status, min, max);
+	return php_random_algo_mersennetwister.range(php_random_default_status(), min, max);
 }
 /* }}} */
 
@@ -1118,20 +1116,6 @@ PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool 
 
 	*result = (zend_long)((trial % umax) + min);
 	return SUCCESS;
-}
-/* }}} */
-
-/* {{{ php_random_default_algo */
-PHPAPI const php_random_algo *php_random_default_algo(void)
-{
-	return &php_random_algo_mersennetwister;
-}
-/* }}} */
-
-/* {{{ php_random_default_status */
-PHPAPI php_random_status *php_random_default_status(void)
-{
-	return RANDOM_G(mersennetwister);
 }
 /* }}} */
 /* ---- INTERNAL API END ---- */
