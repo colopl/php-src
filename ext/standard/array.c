@@ -36,12 +36,12 @@
 #include "php_array.h"
 #include "basic_functions.h"
 #include "php_string.h"
-#include "php_rand.h"
 #include "php_math.h"
 #include "zend_smart_str.h"
 #include "zend_bitset.h"
 #include "zend_exceptions.h"
 #include "ext/spl/spl_array.h"
+#include "ext/random/php_random.h"
 
 /* {{{ defines */
 #define EXTR_OVERWRITE			0
@@ -2892,18 +2892,16 @@ err:
 #undef RANGE_CHECK_DOUBLE_INIT_ARRAY
 #undef RANGE_CHECK_LONG_INIT_ARRAY
 
-static void php_array_data_shuffle(zval *array) /* {{{ */
+PHPAPI int php_array_data_shuffle(const php_random_algo *algo, php_random_status *status, zval *array) /* {{{ */
 {
-	uint32_t idx, j, n_elems;
+	int64_t idx, j, n_elems, rnd_idx, n_left;
 	zval *zv, temp;
 	HashTable *hash;
-	zend_long rnd_idx;
-	uint32_t n_left;
 
 	n_elems = zend_hash_num_elements(Z_ARRVAL_P(array));
 
 	if (n_elems < 1) {
-		return;
+		return SUCCESS;
 	}
 
 	hash = Z_ARRVAL_P(array);
@@ -2912,7 +2910,7 @@ static void php_array_data_shuffle(zval *array) /* {{{ */
 	if (!HT_IS_PACKED(hash)) {
 		if (!HT_HAS_STATIC_KEYS_ONLY(hash)) {
 			Bucket *p = hash->arData;
-			uint32_t i = hash->nNumUsed;
+			zend_long i = hash->nNumUsed;
 
 			for (; i > 0; p++, i--) {
 				if (p->key) {
@@ -2936,7 +2934,10 @@ static void php_array_data_shuffle(zval *array) /* {{{ */
 			}
 		}
 		while (--n_left) {
-			rnd_idx = php_mt_rand_range(0, n_left);
+			rnd_idx = algo->range(status, 0, n_left);
+			if (status->last_unsafe) {
+				return FAILURE;
+			}
 			if (rnd_idx != n_left) {
 				ZVAL_COPY_VALUE(&temp, &hash->arPacked[n_left]);
 				ZVAL_COPY_VALUE(&hash->arPacked[n_left], &hash->arPacked[rnd_idx]);
@@ -2944,7 +2945,7 @@ static void php_array_data_shuffle(zval *array) /* {{{ */
 			}
 		}
 	} else {
-		uint32_t iter_pos = zend_hash_iterators_lower_pos(hash, 0);
+		zend_long iter_pos = zend_hash_iterators_lower_pos(hash, 0);
 
 		if (hash->nNumUsed != hash->nNumOfElements) {
 			for (j = 0, idx = 0; idx < hash->nNumUsed; idx++) {
@@ -2961,7 +2962,10 @@ static void php_array_data_shuffle(zval *array) /* {{{ */
 			}
 		}
 		while (--n_left) {
-			rnd_idx = php_mt_rand_range(0, n_left);
+			rnd_idx = algo->range(status, 0, n_left);
+			if (status->last_unsafe) {
+				return FAILURE;
+			}
 			if (rnd_idx != n_left) {
 				ZVAL_COPY_VALUE(&temp, &hash->arPacked[n_left]);
 				ZVAL_COPY_VALUE(&hash->arPacked[n_left], &hash->arPacked[rnd_idx]);
@@ -2973,6 +2977,8 @@ static void php_array_data_shuffle(zval *array) /* {{{ */
 	hash->nNumUsed = n_elems;
 	hash->nInternalPointer = 0;
 	hash->nNextFreeElement = n_elems;
+	
+	return SUCCESS;
 }
 /* }}} */
 
@@ -2985,7 +2991,7 @@ PHP_FUNCTION(shuffle)
 		Z_PARAM_ARRAY_EX(array, 0, 1)
 	ZEND_PARSE_PARAMETERS_END();
 
-	php_array_data_shuffle(array);
+	php_array_data_shuffle(php_random_default_algo(), php_random_default_status(), array);
 
 	RETURN_TRUE;
 }

@@ -660,10 +660,6 @@ function ftok(string $filename, string $project_id): int {}
 
 function hrtime(bool $as_number = false): array|int|float|false {}
 
-/* lcg.c */
-
-function lcg_value(): float {}
-
 /* md5.c */
 
 /** @refcount 1 */
@@ -1636,8 +1632,8 @@ function unpack(string $format, string $string, int $offset = 0): array|false {}
 function password_get_info(string $hash): array {}
 
 /**
- * @sensitive-param $password
  * @refcount 1
+ * @sensitive-param $password
  */
 function password_hash(string $password, string|int|null $algo, array $options = []): string {}
 
@@ -1679,29 +1675,6 @@ function quoted_printable_decode(string $string): string {}
 
 /** @refcount 1 */
 function quoted_printable_encode(string $string): string {}
-
-/* mt_rand.c */
-
-function mt_srand(int $seed = 0, int $mode = MT_RAND_MT19937): void {}
-
-/** @alias mt_srand */
-function srand(int $seed = 0, int $mode = MT_RAND_MT19937): void {}
-
-function rand(int $min = UNKNOWN, int $max = UNKNOWN): int {}
-
-function mt_rand(int $min = UNKNOWN, int $max = UNKNOWN): int {}
-
-function mt_getrandmax(): int {}
-
-/** @alias mt_getrandmax */
-function getrandmax(): int {}
-
-/* random.c */
-
-/** @refcount 1 */
-function random_bytes(int $length): string {}
-
-function random_int(int $min, int $max): int {}
 
 /* soundex.c */
 
