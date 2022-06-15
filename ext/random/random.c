@@ -1803,10 +1803,12 @@ PHP_RSHUTDOWN_FUNCTION(random)
 	if (RANDOM_G(combined_lcg)) {
 		php_random_status_free(RANDOM_G(combined_lcg));
 	}
+	RANDOM_G(combined_lcg) = NULL;
 
 	if (RANDOM_G(mersennetwister)) {
 		php_random_status_free(RANDOM_G(mersennetwister));
 	}
+	RANDOM_G(mersennetwister) = NULL;
 
 	return SUCCESS;
 }
@@ -1818,9 +1820,6 @@ PHP_RINIT_FUNCTION(random)
 #if defined(ZTS) && defined(COMPILE_DL_RANDOM)
 	ZEND_TSRMLS_CACHE_UPDATE();
 #endif
-
-	RANDOM_G(combined_lcg) = NULL;
-	RANDOM_G(mersennetwister) = NULL;
 
 	return SUCCESS;
 }
