@@ -211,7 +211,7 @@ PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool 
 
 /* ---- STATE BEGIN ---- */
 typedef struct _php_random_status_ {
-	size_t last_dynamic_generated_size;
+	size_t last_generated_size;
 	bool last_unsafe;
 	void *state;
 } php_random_status;

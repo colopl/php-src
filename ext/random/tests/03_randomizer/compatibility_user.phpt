@@ -25,7 +25,7 @@ for ($i = 0; $i < 1000; $i++) {
     }
 }
 
-if (\PHP_INT_SIZE >= 8) {
+try {
     $native_randomizer = new \Random\Randomizer(new \Random\Engine\PCG64(1234));
     $user_randomizer = new \Random\Randomizer(new class (1234) extends \Random\Engine\PCG64 {});
 
@@ -35,6 +35,13 @@ if (\PHP_INT_SIZE >= 8) {
         if ($native !== $user) {
             die("failure PCG64 i: {$i} native: {$native} user: {$user}");
         }
+    }
+} catch (\RuntimeException $e) {
+    if (\PHP_INT_SIZE >= 8) {
+        throw $e;
+    }
+    if ($e->getMessage !== 'Generated value exceeds size of int') {
+        throw $e;
     }
 }
 

@@ -155,14 +155,14 @@ static inline uint32_t rand_range32(const php_random_algo *algo, php_random_stat
 	uint32_t count = 0;
 
 	result = algo->generate(status);
-	total_size = status->last_dynamic_generated_size;
+	total_size = status->last_generated_size;
 	if (status->last_unsafe) {
 		return 0;
 	}
 	if (total_size < sizeof(uint32_t)) {
 		r = algo->generate(status);
-		result = (result << status->last_dynamic_generated_size) | r;
-		total_size += status->last_dynamic_generated_size;
+		result = (result << status->last_generated_size) | r;
+		total_size += status->last_generated_size;
 		if (status->last_unsafe) {
 			return 0;
 		}
@@ -193,14 +193,14 @@ static inline uint32_t rand_range32(const php_random_algo *algo, php_random_stat
 		}
 		
 		result = algo->generate(status);
-		total_size = status->last_dynamic_generated_size;
+		total_size = status->last_generated_size;
 		if (status->last_unsafe) {
 			return 0;
 		}
 		while (total_size < sizeof(uint32_t)) {
 			r = algo->generate(status);
-			result = (result << status->last_dynamic_generated_size) | r;
-			total_size += status->last_dynamic_generated_size;
+			result = (result << status->last_generated_size) | r;
+			total_size += status->last_generated_size;
 			if (status->last_unsafe) {
 				return 0;
 			}
@@ -217,14 +217,14 @@ static inline uint64_t rand_range64(const php_random_algo *algo, php_random_stat
 	uint32_t count = 0;
 
 	result = algo->generate(status);
-	total_size = status->last_dynamic_generated_size;
+	total_size = status->last_generated_size;
 	if (status->last_unsafe) {
 		return 0;
 	}
 	if (total_size < sizeof(uint64_t)) {
 		r = algo->generate(status);
-		result = (result << status->last_dynamic_generated_size) | r;
-		total_size += status->last_dynamic_generated_size;
+		result = (result << status->last_generated_size) | r;
+		total_size += status->last_generated_size;
 		if (status->last_unsafe) {
 			return 0;
 		}
@@ -255,14 +255,14 @@ static inline uint64_t rand_range64(const php_random_algo *algo, php_random_stat
 		}
 		
 		result = algo->generate(status);
-		total_size = status->last_dynamic_generated_size;
+		total_size = status->last_generated_size;
 		if (status->last_unsafe) {
 			return 0;
 		}
 		while (total_size < sizeof(uint64_t)) {
 			r = algo->generate(status);
-			result = (result << status->last_dynamic_generated_size) | r;
-			total_size += status->last_dynamic_generated_size;
+			result = (result << status->last_generated_size) | r;
+			total_size += status->last_generated_size;
 			if (status->last_unsafe) {
 				return 0;
 			}
@@ -316,7 +316,7 @@ PHPAPI php_random_status *php_random_status_allocate(const php_random_algo *algo
 {
 	php_random_status *status = ecalloc(1, sizeof(php_random_status));
 
-	status->last_dynamic_generated_size = algo->generate_size;
+	status->last_generated_size = algo->generate_size;
 	status->last_unsafe = false;
 	status->state = algo->state_size > 0 ? ecalloc(1, algo->state_size) : NULL;
 
@@ -325,7 +325,7 @@ PHPAPI php_random_status *php_random_status_allocate(const php_random_algo *algo
 
 PHPAPI php_random_status *php_random_status_copy(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status)
 {
-	new_status->last_dynamic_generated_size = old_status->last_dynamic_generated_size;
+	new_status->last_generated_size = old_status->last_generated_size;
 	new_status->last_unsafe = old_status->last_unsafe;
 	new_status->state = memcpy(new_status->state, old_status->state, algo->state_size);
 
@@ -795,7 +795,7 @@ static uint64_t user_generate(php_random_status *status)
 	if (size > sizeof(uint64_t)) {
 		size = sizeof(uint64_t);
 	}
-	status->last_dynamic_generated_size = size;
+	status->last_generated_size = size;
 
 	if (size > 0) {
 		/* Endianness safe copy */
@@ -1327,7 +1327,7 @@ PHP_METHOD(Random_Engine_CombinedLCG, generate)
 	ZEND_PARSE_PARAMETERS_NONE();
 
 	generated = engine->algo->generate(engine->status);
-	size = engine->status->last_dynamic_generated_size;
+	size = engine->status->last_generated_size;
 	if (engine->status->last_unsafe) {
 		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 		RETURN_THROWS();
@@ -1561,7 +1561,7 @@ PHP_METHOD(Random_Randomizer, getInt)
 
 	if (argc == 0) {
 		result = randomizer->algo->generate(randomizer->status);
-		if (randomizer->status->last_dynamic_generated_size > sizeof(zend_long)) {
+		if (randomizer->status->last_generated_size > sizeof(zend_long)) {
 			zend_throw_exception(spl_ce_RuntimeException, "Generated value exceeds size of int", 0);
 			RETURN_THROWS();
 		}
@@ -1621,7 +1621,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 			RETURN_THROWS();			
 		}
-		for (i = 0; i< randomizer->status->last_dynamic_generated_size; i++) {
+		for (i = 0; i< randomizer->status->last_generated_size; i++) {
 			ZSTR_VAL(retval)[total_size++] = (result >> (i * 8) & 0xff);
 			if (total_size >= required_size) {
 				break;
@@ -1821,6 +1821,10 @@ PHP_RINIT_FUNCTION(random)
 #if defined(ZTS) && defined(COMPILE_DL_RANDOM)
 	ZEND_TSRMLS_CACHE_UPDATE();
 #endif
+
+	RANDOM_G(combined_lcg) = NULL;
+	RANDOM_G(mersennetwister) = NULL;
+
 	return SUCCESS;
 }
 /* }}} */
