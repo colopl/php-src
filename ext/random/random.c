@@ -1780,6 +1780,9 @@ PHP_MINIT_FUNCTION(random)
 	REGISTER_LONG_CONSTANT("MT_RAND_PHP",     MT_RAND_PHP, CONST_CS | CONST_PERSISTENT);
 
 	RANDOM_G(random_fd) = -1;
+
+	RANDOM_G(combined_lcg) = NULL;
+	RANDOM_G(mersennetwister) = NULL;
 	
 	return SUCCESS;
 }
