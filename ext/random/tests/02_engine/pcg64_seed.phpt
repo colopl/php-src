@@ -31,17 +31,13 @@ for ($i = 0; $i < 1000; $i++) {
 --EXPECTF--
 Random\Engine\PCG64::__construct(): Argument #1 ($seed) must be of type string|int|null, float given
 Random\Engine\PCG64::__construct(): Argument #1 ($seed) state strings must be 16 bytes
-object(Random\Engine\PCG64)#%d (1) {
+object(Random\Engine\PCG64)#%d (%d) {
   ["__states"]=>
-  array(4) {
+  array(2) {
     [0]=>
-    string(19) "3130348909074048294"
+    string(19) "5801214129886722938"
     [1]=>
-    string(20) "10673822082922804875"
-    [2]=>
-    string(1) "0"
-    [3]=>
-    string(1) "1"
+    string(20) "18211065239821862367"
   }
 }
-string(16) "c372f38083fbb0bb"
+string(16) "c42016cd9005ef2e"

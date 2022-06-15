@@ -5734,11 +5734,10 @@ PHP_FUNCTION(str_rot13)
 }
 /* }}} */
 
-PHPAPI int php_string_shuffle(const php_random_engine_algo *algo, void *state, char *str, zend_long len) /* {{{ */
+PHPAPI int php_string_shuffle(const php_random_algo *algo, php_random_status *status, char *str, zend_long len) /* {{{ */
 {
 	int64_t n_elems, rnd_idx, n_left;
 	char temp;
-	bool rng_unsafe = false;
 
 	/* The implementation is stolen from array_data_shuffle       */
 	/* Thus the characteristics of the randomization are the same */
@@ -5751,8 +5750,8 @@ PHPAPI int php_string_shuffle(const php_random_engine_algo *algo, void *state, c
 	n_left = n_elems;
 
 	while (--n_left) {
-		rnd_idx = php_random_engine_range(algo, state, 0, n_left, &rng_unsafe);
-		if (rng_unsafe) {
+		rnd_idx = algo->range(status, 0, n_left);
+		if (status->last_unsafe) {
 			return FAILURE;
 		}
 		if (rnd_idx != n_left) {
@@ -5778,8 +5777,8 @@ PHP_FUNCTION(str_shuffle)
 	RETVAL_STRINGL(ZSTR_VAL(arg), ZSTR_LEN(arg));
 	if (Z_STRLEN_P(return_value) > 1) {
 		php_string_shuffle(
-			php_random_engine_get_default_algo(), 
-			php_random_engine_get_default_state(), 
+			php_random_default_algo(), 
+			php_random_default_status(), 
 			Z_STRVAL_P(return_value), 
 			Z_STRLEN_P(return_value)
 		);

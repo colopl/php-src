@@ -2892,12 +2892,11 @@ err:
 #undef RANGE_CHECK_DOUBLE_INIT_ARRAY
 #undef RANGE_CHECK_LONG_INIT_ARRAY
 
-PHPAPI int php_array_data_shuffle(const php_random_engine_algo *algo, void *state, zval *array) /* {{{ */
+PHPAPI int php_array_data_shuffle(const php_random_algo *algo, php_random_status *status, zval *array) /* {{{ */
 {
 	int64_t idx, j, n_elems, rnd_idx, n_left;
 	zval *zv, temp;
 	HashTable *hash;
-	bool rng_unsafe = false;
 
 	n_elems = zend_hash_num_elements(Z_ARRVAL_P(array));
 
@@ -2935,8 +2934,8 @@ PHPAPI int php_array_data_shuffle(const php_random_engine_algo *algo, void *stat
 			}
 		}
 		while (--n_left) {
-			rnd_idx = php_random_engine_range(algo, state, 0, n_left, &rng_unsafe);
-			if (rng_unsafe) {
+			rnd_idx = algo->range(status, 0, n_left);
+			if (status->last_unsafe) {
 				return FAILURE;
 			}
 			if (rnd_idx != n_left) {
@@ -2963,8 +2962,8 @@ PHPAPI int php_array_data_shuffle(const php_random_engine_algo *algo, void *stat
 			}
 		}
 		while (--n_left) {
-			rnd_idx = php_random_engine_range(algo, state, 0, n_left, &rng_unsafe);
-			if (rng_unsafe) {
+			rnd_idx = algo->range(status, 0, n_left);
+			if (status->last_unsafe) {
 				return FAILURE;
 			}
 			if (rnd_idx != n_left) {
@@ -2992,7 +2991,7 @@ PHP_FUNCTION(shuffle)
 		Z_PARAM_ARRAY_EX(array, 0, 1)
 	ZEND_PARSE_PARAMETERS_END();
 
-	php_array_data_shuffle(php_random_engine_get_default_algo(), php_random_engine_get_default_state(), array);
+	php_array_data_shuffle(php_random_default_algo(), php_random_default_status(), array);
 
 	RETURN_TRUE;
 }

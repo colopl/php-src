@@ -14,4 +14,4 @@ $engine->jump(1234567);
 echo \bin2hex($engine->generate());
 ?>
 --EXPECT--
-17dc0f000c3d4967
+b88e2a0f23720a1d

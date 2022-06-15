@@ -93,6 +93,7 @@
 #include "php.h"
 #include "ext/standard/php_array.h"
 #include "ext/standard/php_string.h"
+
 #include "ext/spl/spl_exceptions.h"
 #include "Zend/zend_exceptions.h"
 
@@ -127,36 +128,6 @@
 
 #include "random_arginfo.h"
 
-/*
- * combinedLCG() returns a pseudo random number in the range of (0, 1).
- * The function combines two CGs with periods of
- * 2^31 - 85 and 2^31 - 249. The period of this function
- * is equal to the product of both primes.
- */
-#define MODMULT(a, b, c, m, s) q = s/a;s=b*(s-a*q)-c*q;if(s<0)s+=m
-
-#define N             MT_N                 /* length of state vector */
-#define M             (397)                /* a period parameter */
-#define hiBit(u)      ((u) & 0x80000000U)  /* mask all but highest   bit of u */
-#define loBit(u)      ((u) & 0x00000001U)  /* mask all but lowest    bit of u */
-#define loBits(u)     ((u) & 0x7FFFFFFFU)  /* mask     the highest   bit of u */
-#define mixBits(u, v) (hiBit(u)|loBits(v)) /* move hi bit of u to hi bit of v */
-
-#define twist(m,u,v)  (m ^ (mixBits(u,v)>>1) ^ ((uint32_t)(-(int32_t)(loBit(v))) & 0x9908b0dfU))
-#define twist_php(m,u,v)  (m ^ (mixBits(u,v)>>1) ^ ((uint32_t)(-(int32_t)(loBit(u))) & 0x9908b0dfU))
-
-#define RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generate_size, engine_unsafe)	\
-	do { \
-		bool _unsafe = false; \
-		RANDOM_ENGINE_GENERATE(algo, state, result, generate_size, &_unsafe); \
-		if (_unsafe == true) { \
-			if (engine_unsafe != NULL) { \
-				*engine_unsafe = true; \
-			} \
-			return 0; \
-		} \
-	} while (0);
-
 ZEND_DECLARE_MODULE_GLOBALS(random)
 
 PHPAPI zend_class_entry *random_ce_Random_Engine;
@@ -176,32 +147,37 @@ static zend_object_handlers random_engine_pcg64_object_handlers;
 static zend_object_handlers random_engine_secure_object_handlers;
 static zend_object_handlers random_randomizer_object_handlers;
 
-static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, uint32_t umax, bool *engine_unsafe) {
-	uint32_t result, limit;
-	size_t generated_size;
-	uint32_t count;
+/* ---- COMMON BEGIN --- */
+static inline uint32_t rand_range32(const php_random_algo *algo, php_random_status *status, uint32_t umax)
+{
+	uint32_t result, limit, r;
+	size_t total_size = 0;
+	uint32_t count = 0;
 
-	RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generated_size, engine_unsafe);
-	while (generated_size < sizeof(uint32_t)) {
-		uint32_t ret = 0;
-		size_t generate_size;
-
-		RANDOM_ENGINE_GENERATE_GUARD(algo, state, ret, generate_size, engine_unsafe);
-		result = (result << generate_size) | ret;
-
-		generated_size += generate_size;
+	result = algo->generate(status);
+	total_size = status->last_dynamic_generated_size;
+	if (status->last_unsafe) {
+		return 0;
+	}
+	if (total_size < sizeof(uint32_t)) {
+		r = algo->generate(status);
+		result = (result << status->last_dynamic_generated_size) | r;
+		total_size += status->last_dynamic_generated_size;
+		if (status->last_unsafe) {
+			return 0;
+		}
 	}
 
 	/* Special case where no modulus is required */
 	if (UNEXPECTED(umax == UINT32_MAX)) {
-		return result;
+		return true;
 	}
 
-	/* Increment the max so the range is inclusive of max */
+	/* Increment the max so range is inclusive of max */
 	umax++;
 
 	/* Powers of two are not biased */
-	if ((umax & (umax - 1)) == 0) {
+	if ((umax & (umax -1)) == 0) {
 		return result & (umax - 1);
 	}
 
@@ -209,47 +185,49 @@ static uint32_t rand_range32(const php_random_engine_algo *algo, void *state, ui
 	limit = UINT32_MAX - (UINT32_MAX % umax) - 1;
 
 	/* Discard numbers over the limit to avoid modulo bias */
-	count = 0;
 	while (UNEXPECTED(result > limit)) {
-		/* If the requirements cannot be met in a cycles, the engine is unsafe */
+		/* If the requirements cannot be met in a cycles, return fail */
 		if (++count > 50) {
-			if (engine_unsafe != NULL) {
-				*engine_unsafe = true;
-			}
+			status->last_unsafe = true;
 			return 0;
 		}
-		RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generated_size, engine_unsafe);
-		while (generated_size < sizeof(uint32_t)) {
-			uint32_t ret;
-			size_t generate_size;
-
-			RANDOM_ENGINE_GENERATE_GUARD(algo, state, ret, generate_size, engine_unsafe);
-
-			result = (result << generate_size) | ret;
-
-			generated_size += generate_size;
+		
+		result = algo->generate(status);
+		total_size = status->last_dynamic_generated_size;
+		if (status->last_unsafe) {
+			return 0;
+		}
+		while (total_size < sizeof(uint32_t)) {
+			r = algo->generate(status);
+			result = (result << status->last_dynamic_generated_size) | r;
+			total_size += status->last_dynamic_generated_size;
+			if (status->last_unsafe) {
+				return 0;
+			}
 		}
 	}
 
 	return result % umax;
 }
 
-static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, uint64_t umax, bool *engine_unsafe) {
-	uint64_t result, limit;
-	size_t generated_size;
-	uint32_t count;
+static inline uint64_t rand_range64(const php_random_algo *algo, php_random_status *status, uint64_t umax)
+{
+	uint64_t result, limit, r;
+	size_t total_size = 0;
+	uint32_t count = 0;
 
-	RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generated_size, engine_unsafe);
-
-	while (generated_size < sizeof(uint64_t)) {
-		uint64_t ret = 0;
-		size_t generate_size = 0;
-
-		RANDOM_ENGINE_GENERATE_GUARD(algo, state, ret, generate_size, engine_unsafe);
-
-		result = (result << generate_size) | ret;
-
-		generated_size += generate_size;
+	result = algo->generate(status);
+	total_size = status->last_dynamic_generated_size;
+	if (status->last_unsafe) {
+		return 0;
+	}
+	if (total_size < sizeof(uint64_t)) {
+		r = algo->generate(status);
+		result = (result << status->last_dynamic_generated_size) | r;
+		total_size += status->last_dynamic_generated_size;
+		if (status->last_unsafe) {
+			return 0;
+		}
 	}
 
 	/* Special case where no modulus is required */
@@ -257,11 +235,11 @@ static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, ui
 		return result;
 	}
 
-	/* Increment the max so the range is inclusive of max */
+	/* Increment the max so range is inclusive of max */
 	umax++;
 
 	/* Powers of two are not biased */
-	if ((umax & (umax - 1)) == 0) {
+	if ((umax & (umax -1)) == 0) {
 		return result & (umax - 1);
 	}
 
@@ -269,85 +247,173 @@ static uint64_t rand_range64(const php_random_engine_algo *algo, void *state, ui
 	limit = UINT64_MAX - (UINT64_MAX % umax) - 1;
 
 	/* Discard numbers over the limit to avoid modulo bias */
-	count = 0;
 	while (UNEXPECTED(result > limit)) {
-		/* If the requirements cannot be met in a cycles, the engine is unsafe */
+		/* If the requirements cannot be met in a cycles, return fail */
 		if (++count > 50) {
-			if (engine_unsafe != NULL) {
-				*engine_unsafe = true;
-			}
+			status->last_unsafe = true;
 			return 0;
 		}
-		RANDOM_ENGINE_GENERATE_GUARD(algo, state, result, generated_size, engine_unsafe);
-
-		while (generated_size < sizeof(uint64_t)) {
-			uint64_t ret = 0;
-			size_t generate_size = 0;
-
-			RANDOM_ENGINE_GENERATE_GUARD(algo, state, ret, generate_size, engine_unsafe);
-
-			result = (result << generate_size) | ret;
-
-			generated_size += generate_size;
+		
+		result = algo->generate(status);
+		total_size = status->last_dynamic_generated_size;
+		if (status->last_unsafe) {
+			return 0;
+		}
+		while (total_size < sizeof(uint64_t)) {
+			r = algo->generate(status);
+			result = (result << status->last_dynamic_generated_size) | r;
+			total_size += status->last_dynamic_generated_size;
+			if (status->last_unsafe) {
+				return 0;
+			}
 		}
 	}
 
 	return result % umax;
 }
 
-static inline zend_object *php_random_engine_common_init(zend_class_entry *ce, const php_random_engine_algo *algo, const zend_object_handlers *handlers) {
+static inline zend_long common_range(const php_random_algo *algo, php_random_status *status, zend_long min, zend_long max)
+{
+	zend_ulong umax = max - min;
+
+	if (PHP_RANDOM_ALGO_IS_DYNAMIC(algo) || algo->generate_size > sizeof(uint32_t) || umax > UINT32_MAX) {
+		return (zend_long) rand_range64(algo, status, umax) + min;
+	}
+
+	return (zend_long) rand_range32(algo, status, umax) + min;
+
+}
+
+static void engine_common_free_obj(zend_object *obj)
+{
+	php_random_engine *engine = php_random_engine_from_obj(obj);
+
+	if (engine->status) {
+		php_random_free_status(engine->status);
+	}
+
+	zend_object_std_dtor(obj);
+}
+
+static zend_object *engine_common_clone_obj(zend_object *obj)
+{
+	php_random_engine *old_engine = php_random_engine_from_obj(obj);
+	php_random_engine *new_engine = php_random_engine_from_obj(old_engine->std.ce->create_object(old_engine->std.ce));
+
+	new_engine->algo = old_engine->algo;
+	if (old_engine->status) {
+		new_engine->status = php_random_clone_status(old_engine->algo, old_engine->status, new_engine->status);
+	}
+
+	zend_objects_clone_members(&new_engine->std, &old_engine->std);
+
+	return &new_engine->std;
+}
+/* ---- COMMON END ---- */
+
+/* ---- COMMON API BEGIN ---- */
+PHPAPI php_random_status *php_random_allocate_status(const php_random_algo *algo)
+{
+	php_random_status *status = ecalloc(1, sizeof(php_random_status));
+
+	status->last_dynamic_generated_size = algo->generate_size;
+	status->last_unsafe = false;
+	status->state = algo->state_size > 0 ? ecalloc(1, algo->state_size) : NULL;
+
+	return status;
+}
+
+PHPAPI php_random_status *php_random_clone_status(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status)
+{
+	new_status->last_dynamic_generated_size = old_status->last_dynamic_generated_size;
+	new_status->last_unsafe = old_status->last_unsafe;
+	new_status->state = memcpy(new_status->state, old_status->state, algo->state_size);
+
+	return new_status;
+}
+
+PHPAPI void php_random_free_status(php_random_status *status)
+{
+	if (status->state) {
+		efree(status->state);
+	}
+	efree(status);
+}
+
+PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, zend_object_handlers *handlers, const php_random_algo *algo)
+{
 	php_random_engine *engine = zend_object_alloc(sizeof(php_random_engine), ce);
 
 	zend_object_std_init(&engine->std, ce);
 	object_properties_init(&engine->std, ce);
 
 	engine->algo = algo;
-	if (engine->algo->state_size > 0) {
-		engine->state = ecalloc(1, engine->algo->state_size);
-	}
+	engine->status = php_random_allocate_status(engine->algo);
 	engine->std.handlers = handlers;
 
-	return &engine->std;
+	return engine;
 }
 
-static void php_random_engine_common_free_obj(zend_object *object) {
-	php_random_engine *engine = php_random_engine_from_obj(object);
+PHPAPI void php_random_engine_common_free_object(zend_object *object)
+{
+	engine_common_free_obj(object);
+}
 
-	if (engine->state) {
-		efree(engine->state);
+PHPAPI zend_object *php_random_engine_common_clone_object(zend_object *object)
+{
+	return engine_common_clone_obj(object);
+}
+/* ---- COMMON API END ---- */
+
+/* ---- COMBINED LCG BEGIN ---- */
+/*
+ * combinedLCG() returns a pseudo random number in the range of (0, 1).
+ * The function combines two CGs with periods of
+ * 2^31 - 85 and 2^31 - 249. The period of this function
+ * is equal to the product of both primes.
+ */
+#define MODMULT(a, b, c, m, s) q = s/a;s=b*(s-a*q)-c*q;if(s<0)s+=m
+
+static inline void combinedlcg_seed_default(php_random_status *status)
+{
+	php_random_status_state_combinedlcg *s = status->state;
+	struct timeval tv;
+
+	if (gettimeofday(&tv, NULL) == 0) {
+		s->state[0] = tv.tv_usec ^ (tv.tv_usec << 11);
+	} else {
+		s->state[0] = 1;
 	}
 
-	zend_object_std_dtor(object);
-}
+#ifdef ZTS
+	s->state[1] = (zend_long) tsrm_thread_id();
+#else
+	s->state[1] = (zend_long) getpid();
+#endif
 
-static zend_object *php_random_engine_common_clone_obj(zend_object *old_object) {
-	php_random_engine *old_engine = php_random_engine_from_obj(old_object);
-	php_random_engine *new_engine = php_random_engine_from_obj(old_object->ce->create_object(old_object->ce));
-
-	zend_objects_clone_members(&new_engine->std, &old_engine->std);
-
-	new_engine->algo = old_engine->algo;
-	if (old_engine->state) {
-		memcpy(new_engine->state, old_engine->state, old_engine->algo->state_size);
+	/* Add entropy to s2 by calling gettimeofday() again */
+	if (gettimeofday(&tv, NULL) == 0) {
+		s->state[1] ^= (tv.tv_usec << 11);
 	}
-
-	return &new_engine->std;
 }
 
-/* CombinedLCG begin */
+static void combinedlcg_seed(php_random_status *status, uint64_t seed)
+{
+	php_random_status_state_combinedlcg *s = status->state;
 
-static inline size_t combinedlcg_dynamic_generate_size(void *state) {
-	return sizeof(uint32_t);
+	s->state[0] = seed & 0xffffffffU;
+	s->state[1] = seed >> 32;
 }
 
-static uint64_t combinedlcg_generate(void *state, bool *engine_unsafe) {
+static uint64_t combinedlcg_generate(php_random_status *status)
+{
+	php_random_status_state_combinedlcg *s = status->state;
 	int32_t q, z;
-	php_random_engine_state_combinedlcg *s = state;
 
-	MODMULT(53668, 40014, 12211, 2147483563L, s->s[0]);
-	MODMULT(52774, 40692, 3791, 2147483399L, s->s[1]);
+	MODMULT(53668, 40014, 12211, 2147483563L, s->state[0]);
+	MODMULT(52774, 40692, 3791, 2147483399L, s->state[1]);
 
-	z = s->s[0] - s->s[1];
+	z = s->state[0] - s->state[1];
 	if (z < 1) {
 		z += 2147483562;
 	}
@@ -355,213 +421,71 @@ static uint64_t combinedlcg_generate(void *state, bool *engine_unsafe) {
 	return (uint64_t) z;
 }
 
-static void combinedlcg_seed(void *state, const uint64_t seed) {
-	php_random_engine_state_combinedlcg *s = state;
-
-	s->s[0] = seed & 0xffffffffU;
-	s->s[1] = seed >> 32;
-
-	/* Seed only once */
-	s->seeded = true;
+static zend_long combinedlcg_range(php_random_status *status, zend_long min, zend_long max)
+{
+	return common_range(&php_random_algo_combinedlcg, status, min, max);
 }
 
-static void combinedlcg_seed_default(php_random_engine_state_combinedlcg *state) {
-	struct timeval tv;
-
-	if (gettimeofday(&tv, NULL) == 0) {
-		state->s[0] = tv.tv_usec ^ (tv.tv_usec << 11);
-	} else {
-		state->s[0] = 1;
-	}
-
-#ifdef ZTS
-	state->s[1] = (zend_long) tsrm_thread_id();
-#else
-	state->s[1] = (zend_long) getpid();
-#endif
-
-	/* Add entropy to s2 by calling gettimeofday() again */
-	if (gettimeofday(&tv, NULL) == 0) {
-		state->s[1] ^= (tv.tv_usec << 11);
-	}
-
-	/* Seed only once */
-	state->seeded = true;
-}
-
-static int combinedlcg_serialize(void *state, HashTable *data) {
-	php_random_engine_state_combinedlcg *s = state;
-	zval tmp;
-	int i;
+static bool combinedlcg_serialize(php_random_status *status, HashTable *data)
+{
+	php_random_status_state_combinedlcg *s = status->state;
+	zval t;
+	uint32_t i;
 
 	for (i = 0; i < 2; i++) {
-		ZVAL_LONG(&tmp, s->s[i]);
-		zend_hash_next_index_insert(data, &tmp);
+		ZVAL_LONG(&t, s->state[i]);
+		zend_hash_next_index_insert(data, &t);
 	}
-	ZVAL_LONG(&tmp, s->seeded);
-	zend_hash_next_index_insert(data, &tmp);
 
-	return SUCCESS;
+	return true;
 }
 
-static int combinedlcg_unserialize(void *state, HashTable *data) {
-	php_random_engine_state_combinedlcg *s = state;
-	zval *tmp;
-	int i;
+static bool combinedlcg_unserialize(php_random_status *status, HashTable *data)
+{
+	php_random_status_state_combinedlcg *s = status->state;
+	zval *t;
+	uint32_t i;
 
 	for (i = 0; i < 2; i++) {
-		tmp = zend_hash_index_find(data, i);
-		if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
-			return FAILURE;
+		t = zend_hash_index_find(data, i);
+		if (!t || Z_TYPE_P(t) != IS_LONG) {
+			return false;
 		}
-		s->s[i] = Z_LVAL_P(tmp);
+		s->state[i] = Z_LVAL_P(t);
 	}
-	tmp = zend_hash_index_find(data, 2);
-	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
-		return FAILURE;
-	}
-	s->seeded = Z_LVAL_P(tmp);
 
-	return SUCCESS;
+	return true;
 }
 
-static zend_object *php_random_engine_combinedlcg_new(zend_class_entry *ce) {
-	return php_random_engine_common_init(ce, &php_random_engine_algo_combinedlcg, &random_engine_combinedlcg_object_handlers);
-}
-
-const php_random_engine_algo php_random_engine_algo_combinedlcg = {
+const php_random_algo php_random_algo_combinedlcg = {
 	sizeof(uint32_t),
-	combinedlcg_dynamic_generate_size,
-	sizeof(php_random_engine_state_combinedlcg),
-	combinedlcg_generate,
+	sizeof(php_random_status_state_combinedlcg),
 	combinedlcg_seed,
+	combinedlcg_generate,
+	combinedlcg_range,
 	combinedlcg_serialize,
 	combinedlcg_unserialize
 };
 
-/* CombinedLCG end */
-
-/* PCG64 begin */
-
-static inline size_t pcg64_dynamic_generate_size(void *state) {
-	return sizeof(uint64_t);
+static zend_object *php_random_engine_combinedlcg_new(zend_class_entry *ce)
+{
+	return &php_random_engine_common_init(ce,&random_engine_combinedlcg_object_handlers, &php_random_algo_combinedlcg)->std;
 }
+/* ---- COMBINED LCG END ---- */
 
-static inline void pcg64_step(php_random_engine_state_pcg64 *s) {
-	random_uint128_t con;
-	UINT128_CON(2549297995355413924ULL, 4865540595714422341ULL, con);
+/* ---- MT BEGIN ---- */
+#define N             MT_N                 /* length of state vector */
+#define M             (397)                /* a period parameter */
+#define hiBit(u)      ((u) & 0x80000000U)  /* mask all but highest   bit of u */
+#define loBit(u)      ((u) & 0x00000001U)  /* mask all but lowest    bit of u */
+#define loBits(u)     ((u) & 0x7FFFFFFFU)  /* mask     the highest   bit of u */
+#define mixBits(u, v) (hiBit(u)|loBits(v)) /* move hi bit of u to hi bit of v */
 
-	UINT128_MUL(s->s, con, s->s);
-	UINT128_ADD(s->s, s->inc, s->s);
-}
+#define twist(m,u,v)  (m ^ (mixBits(u,v)>>1) ^ ((uint32_t)(-(int32_t)(loBit(v))) & 0x9908b0dfU))
+#define twist_php(m,u,v)  (m ^ (mixBits(u,v)>>1) ^ ((uint32_t)(-(int32_t)(loBit(u))) & 0x9908b0dfU))
 
-static uint64_t pcg64_generate(void *state, bool *engine_unsafe) {
-	php_random_engine_state_pcg64 *s = state;
-	uint64_t result;
-
-	pcg64_step(s);
-	PCG64_ROTR64(s->s, result);
-	
-	return result;
-}
-
-static void pcg64_seed_full(php_random_engine_state_pcg64 *state) {
-	random_uint128_t initstate, initseq;
-
-	initstate = state->s;
-	initseq = state->inc;
-
-	UINT128_CON(0ULL, 0ULL, state->s);
-	PCG64_ROTL1OR1(initseq, state->inc);
-	pcg64_step(state);
-	UINT128_ADD(initstate, state->s, state->s);
-	pcg64_step(state);
-}
-
-static void pcg64_seed(void *state, const uint64_t seed) {
-	php_random_engine_state_pcg64 *s = state;
-	
-	UINT128_CON(0ULL, seed, s->s);
-	UINT128_CON(0ULL, 0ULL, s->inc);
-
-	pcg64_seed_full(s);
-}
-
-static int pcg64_serialize(void *state, HashTable *data) {
-	php_random_engine_state_pcg64 *s = state;
-	uint64_t t;
-	zval tmp;
-
-	t = UINT128_HI64(s->s);
-	ZVAL_STR(&tmp, zend_strpprintf(0, "%" PRIu64, t));
-	zend_hash_next_index_insert(data, &tmp);
-	
-	t = UINT128_LO64(s->s);
-	ZVAL_STR(&tmp, zend_strpprintf(0, "%" PRIu64, t));
-	zend_hash_next_index_insert(data, &tmp);
-
-	t = UINT128_HI64(s->inc);
-	ZVAL_STR(&tmp, zend_strpprintf(0, "%" PRIu64, t));
-	zend_hash_next_index_insert(data, &tmp);
-
-	t = UINT128_LO64(s->inc);
-	ZVAL_STR(&tmp, zend_strpprintf(0, "%" PRIu64, t));
-	zend_hash_next_index_insert(data, &tmp);
-
-	return SUCCESS;
-}
-
-static int pcg64_unserialize(void *state, HashTable *data) {
-	php_random_engine_state_pcg64 *s = state;
-	uint64_t t[2];
-	zval *tmp;
-	int i;
-
-	for (i = 0; i < 2; i++) {
-		tmp = zend_hash_index_find(data, i);
-		if (!tmp || Z_TYPE_P(tmp) != IS_STRING) {
-			return FAILURE;
-		}
-		t[i] = strtoull(ZSTR_VAL(Z_STR_P(tmp)), NULL, 10);
-	}
-	UINT128_CON(t[0], t[1], s->s);
-
-	for (i = 0; i < 2; i++) {
-		tmp = zend_hash_index_find(data, i + 2);
-		if (!tmp || Z_TYPE_P(tmp) != IS_STRING) {
-			return FAILURE;
-		}
-		t[i] = strtoull(ZSTR_VAL(Z_STR_P(tmp)), NULL, 10);
-	}
-	UINT128_CON(t[0], t[1], s->inc);
-
-	return SUCCESS;
-}
-
-static zend_object *php_random_engine_pcg64_new(zend_class_entry *ce) {
-	return php_random_engine_common_init(ce, &php_random_engine_algo_pcg64, &random_engine_pcg64_object_handlers);
-}
-
-const php_random_engine_algo php_random_engine_algo_pcg64 = {
-	sizeof(uint64_t),
-	pcg64_dynamic_generate_size,
-	sizeof(php_random_engine_state_pcg64),
-	pcg64_generate,
-	pcg64_seed,
-	pcg64_serialize,
-	pcg64_unserialize
-};
-
-/* PCG64 end */
-
-/* MersenneTwister begin */
-
-static inline size_t mersennetwister_dynamic_generate_size(void *state) {
-	return sizeof(uint32_t);
-}
-
-static inline void mersennetwister_reload(php_random_engine_state_mersennetwister *state) {
-	uint32_t *p = state->s;
+static inline void mersennetwister_reload(php_random_status_state_mersennetwister *state) {
+	uint32_t *p = state->state;
 	int i;
 
 	if (state->mode == MT_RAND_MT19937) {
@@ -571,7 +495,7 @@ static inline void mersennetwister_reload(php_random_engine_state_mersennetwiste
 		for (i = M; --i; ++p) {
 			*p = twist(p[M-N], p[0], p[1]);
 		}
-		*p = twist(p[M-N], p[0], state->s[0]);
+		*p = twist(p[M-N], p[0], state->state[0]);
 	} else {
 		for (i = N - M; i--; ++p) {
 			*p = twist_php(p[M], p[0], p[1]);
@@ -579,165 +503,288 @@ static inline void mersennetwister_reload(php_random_engine_state_mersennetwiste
 		for (i = M; --i; ++p) {
 			*p = twist_php(p[M-N], p[0], p[1]);
 		}
-		*p = twist_php(p[M-N], p[0], state->s[0]);
+		*p = twist_php(p[M-N], p[0], state->state[0]);
 	}
 
-	state->cnt = 0;
+	state->count = 0;
 }
 
-static void mersennetwister_seed(void *state, const uint64_t seed) {
+static void mersennetwister_seed(php_random_status *status, uint64_t seed)
+{
 	/* Initialize generator state with seed
 	   See Knuth TAOCP Vol 2, 3rd Ed, p.106 for multiplier.
 	   In previous versions, most significant bits (MSBs) of the seed affect
 	   only MSBs of the state array.  Modified 9 Jan 2002 by Makoto Matsumoto. */
-	php_random_engine_state_mersennetwister *s = state;
+	php_random_status_state_mersennetwister *s = status->state;
 
-	s->s[0] = seed & 0xffffffffU;
-	for (s->cnt = 1; s->cnt < MT_N; s->cnt++) {
-		s->s[s->cnt] = (1812433253U * (s->s[s->cnt - 1] ^ (s->s[s->cnt - 1] >> 30)) + s->cnt) & 0xffffffffU;
+	s->state[0] = seed & 0xffffffffU;
+	for (s->count = 1; s->count < MT_N; s->count++) {
+		s->state[s->count] = (1812433253U * (s->state[s->count - 1] ^ (s->state[s->count - 1] >> 30)) + s->count) & 0xffffffffU;
 	}
-	mersennetwister_reload(s);
 
-	/* Seed only once */
-	s->seeded = true;
+	mersennetwister_reload(s);
 }
 
-static uint64_t mersennetwister_generate(void *state, bool *engine_unsafe) {
-	php_random_engine_state_mersennetwister *s = state;
-	uint32_t s1;
+static inline void mersennetwister_seed_default(php_random_status *status)
+{
+	zend_long seed = 0;
 
-	if (!s->seeded) {
-		zend_long bytes;
-		if (php_random_bytes_silent(&bytes, sizeof(zend_long)) == FAILURE) {
-			bytes = GENERATE_SEED();
-		}
-		mersennetwister_seed(state, bytes);
+	if (php_random_bytes_silent(&seed, sizeof(zend_long)) == FAILURE) {
+		/* FIXME: This is a security risk. Shall I throw an E_WARNING? */
+		seed = GENERATE_SEED();
 	}
 
-	if (s->cnt >= MT_N) {
+	mersennetwister_seed(status, (uint64_t) seed);
+}
+
+static uint64_t mersennetwister_generate(php_random_status *status)
+{
+	php_random_status_state_mersennetwister *s = status->state;
+	uint32_t s1;
+
+	if (s->count >= MT_N) {
 		mersennetwister_reload(s);
 	}
 
-	s1 = s->s[s->cnt++];
+	s1 = s->state[s->count++];
 	s1 ^= (s1 >> 11);
 	s1 ^= (s1 << 7) & 0x9d2c5680U;
 	s1 ^= (s1 << 15) & 0xefc60000U;
+
 	return (uint64_t) (s1 ^ (s1 >> 18));
 }
 
-static int mersennetwister_serialize(void *state, HashTable *data) {
-	php_random_engine_state_mersennetwister *s = state;
+static zend_long mersennetwister_range(php_random_status *status, zend_long min, zend_long max)
+{
+	php_random_status_state_mersennetwister *s = status->state;
+
+	if (s->mode == MT_RAND_MT19937) {
+		return common_range(&php_random_algo_mersennetwister, status, min, max);
+	}
+
+	uint64_t r = php_random_algo_mersennetwister.generate(status) >> 1;
+	/* Legacy mode deliberately not inside php_mt_rand_range()
+	 * to prevent other functions being affected */
+	RAND_RANGE_BADSCALING(r, min, max, PHP_MT_RAND_MAX);
+	return (zend_long) r;
+}
+
+static bool mersennetwister_serialize(php_random_status *status, HashTable *data)
+{
+	php_random_status_state_mersennetwister *s = status->state;
 	zval tmp;
-	int i;
+	uint32_t i;
 
 	for (i = 0; i< MT_N; i++) {
-		ZVAL_LONG(&tmp, s->s[i]);
+		ZVAL_LONG(&tmp, s->state[i]);
 		zend_hash_next_index_insert(data, &tmp);
 	}
-	ZVAL_LONG(&tmp, s->cnt);
+	ZVAL_LONG(&tmp, s->count);
 	zend_hash_next_index_insert(data, &tmp);
 	ZVAL_LONG(&tmp, s->mode);
 	zend_hash_next_index_insert(data, &tmp);
-	ZVAL_LONG(&tmp, s->seeded);
-	zend_hash_next_index_insert(data, &tmp);
-
-	return SUCCESS;
+	
+	return true;
 }
 
-static int mersennetwister_unserialize(void *state, HashTable *data) {
-	php_random_engine_state_mersennetwister *s = state;
+static bool mersennetwister_unserialize(php_random_status *status, HashTable *data)
+{
+	php_random_status_state_mersennetwister *s = status->state;
 	zval *tmp;
-	int i;
+	uint32_t i;
 
 	for (i = 0; i < MT_N; i++) {
 		tmp = zend_hash_index_find(data, i);
 		if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
-			return FAILURE;
+			return false;
 		}
 
-		s->s[i] = Z_LVAL_P(tmp);
+		s->state[i] = Z_LVAL_P(tmp);
 	}
 	tmp = zend_hash_index_find(data, MT_N); 
 	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
-		return FAILURE;
+		return false;
 	}
-	s->cnt = Z_LVAL_P(tmp);
+	s->count = Z_LVAL_P(tmp);
 	tmp = zend_hash_index_find(data, MT_N + 1);
 	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
-		return FAILURE;
+		return false;
 	}
 	s->mode = Z_LVAL_P(tmp);
-	tmp = zend_hash_index_find(data, MT_N + 2);
-	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
-		return FAILURE;
-	}
-	s->seeded = Z_LVAL_P(tmp);
 
-	return SUCCESS;
+	return true;
 }
 
-static zend_object *php_random_engine_mersennetwister_new(zend_class_entry *ce) {
-	return php_random_engine_common_init(ce, &php_random_engine_algo_mersennetwister, &random_engine_mersennetwister_object_handlers);
-}
-
-const php_random_engine_algo php_random_engine_algo_mersennetwister = {
+const php_random_algo php_random_algo_mersennetwister = {
 	sizeof(uint32_t),
-	mersennetwister_dynamic_generate_size,
-	sizeof(php_random_engine_state_mersennetwister),
-	mersennetwister_generate,
+	sizeof(php_random_status_state_mersennetwister),
 	mersennetwister_seed,
+	mersennetwister_generate,
+	mersennetwister_range,
 	mersennetwister_serialize,
 	mersennetwister_unserialize
 };
 
-/* MersenneTwister end */
-
-/* Secure begin */
-
-static inline size_t secure_dynamic_generate_size(void *state) {
-	return sizeof(zend_ulong);
+static zend_object *php_random_engine_mersennetwister_new(zend_class_entry *ce)
+{
+	return &php_random_engine_common_init(ce, &random_engine_mersennetwister_object_handlers, &php_random_algo_mersennetwister)->std;
 }
+/* ---- MT END ---- */
 
-static uint64_t secure_generate(void *state, bool *engine_unsafe) {
-	uint64_t ret = 0;
+/* ---- PCG64 BEGIN ---- */
+static inline void pcg64s_advance(php_random_status_state_pcg64s *state, uint64_t advance) {	
+	php_random_uint128_t
+		cur_mult = php_random_uint128_constant(2549297995355413924ULL,4865540595714422341ULL),
+		cur_plus = php_random_uint128_constant(6364136223846793005ULL,1442695040888963407ULL),
+		acc_mult = php_random_uint128_constant(0ULL, 1ULL),
+		acc_plus = php_random_uint128_constant(0ULL, 0ULL);
 
-	if (php_random_bytes_silent(&ret, sizeof(zend_ulong)) == FAILURE && engine_unsafe != NULL) {
-		*engine_unsafe = true;
+	while (advance > 0) {
+		if (advance & 1) {
+			acc_mult = php_random_uint128_multiply(acc_mult, cur_mult);
+			acc_plus = php_random_uint128_add(php_random_uint128_multiply(acc_plus, cur_mult), cur_plus);
+		}
+		cur_plus = php_random_uint128_multiply(php_random_uint128_add(cur_mult, php_random_uint128_constant(0ULL, 1ULL)), cur_plus);
+		cur_mult = php_random_uint128_multiply(cur_mult, cur_mult);
+		advance /= 2;
 	}
 
-	return ret;
+	state->state = php_random_uint128_add(php_random_uint128_multiply(acc_mult, state->state), acc_plus);
 }
 
-static zend_object *php_random_engine_secure_new(zend_class_entry *ce) {
-	return php_random_engine_common_init(ce, &php_random_engine_algo_secure, &random_engine_secure_object_handlers);
+static inline void pcg64s_step(php_random_status_state_pcg64s *s) {
+	s->state = php_random_uint128_add(
+		php_random_uint128_multiply(s->state, php_random_uint128_constant(2549297995355413924ULL,4865540595714422341ULL)),
+		php_random_uint128_constant(6364136223846793005ULL,1442695040888963407ULL)
+	);
 }
 
-const php_random_engine_algo php_random_engine_algo_secure = {
+static inline void pcg64s_seed_128(php_random_status *status, php_random_uint128_t seed)
+{
+	php_random_status_state_pcg64s *s = status->state;
+	s->state = php_random_uint128_constant(0ULL, 0ULL);
+	pcg64s_step(s);
+	s->state = php_random_uint128_add(s->state, seed);
+	pcg64s_step(s);
+}
+
+static void pcg64s_seed(php_random_status *status, uint64_t seed)
+{
+	pcg64s_seed_128(status, php_random_uint128_constant(0ULL, seed));
+}
+
+static uint64_t pcg64s_generate(php_random_status *status)
+{
+	php_random_status_state_pcg64s *s = status->state;
+
+	pcg64s_step(s);
+	return php_random_pcg64s_rotr64(s->state);
+}
+
+static zend_long pcg64s_range(php_random_status *status, zend_long min, zend_long max)
+{
+	return common_range(&php_random_algo_pcg64s, status, min, max);
+}
+
+static bool pcg64s_serialize(php_random_status *status, HashTable *data)
+{
+	php_random_status_state_pcg64s *s = status->state;
+	uint64_t u;
+	zval z;
+
+	u = php_random_uint128_hi(s->state);
+	ZVAL_STR(&z, zend_strpprintf(0, "%" PRIu64, u));
+	zend_hash_next_index_insert(data, &z);
+	
+	u = php_random_uint128_lo(s->state);
+	ZVAL_STR(&z, zend_strpprintf(0, "%" PRIu64, u));
+	zend_hash_next_index_insert(data, &z);
+
+	return true;
+}
+
+static bool pcg64s_unserialize(php_random_status *status, HashTable *data)
+{
+	php_random_status_state_pcg64s *s = status->state;
+	uint64_t u[2];
+	zval *z;
+	uint32_t i;
+
+	for (i = 0; i < 2; i++) {
+		z = zend_hash_index_find(data, i);
+		if (!z || Z_TYPE_P(z) != IS_STRING) {
+			return false;
+		}
+		u[i] = strtoull(ZSTR_VAL(Z_STR_P(z)), NULL, 10);
+	}
+	s->state = php_random_uint128_constant(u[0], u[1]);
+
+	return true;
+}
+
+const php_random_algo php_random_algo_pcg64s = {
+	sizeof(uint64_t),
+	sizeof(php_random_status_state_pcg64s),
+	pcg64s_seed,
+	pcg64s_generate,
+	pcg64s_range,
+	pcg64s_serialize,
+	pcg64s_unserialize
+};
+
+static zend_object *php_random_engine_pcg64_new(zend_class_entry *ce)
+{
+	return &php_random_engine_common_init(ce, &random_engine_pcg64_object_handlers, &php_random_algo_pcg64s)->std;
+}
+/* ---- PCG64 END ---- */
+
+/* ---- SECURE BEGIN ---- */
+static uint64_t secure_generate(php_random_status *status)
+{
+	zend_ulong r = 0;
+
+	if (php_random_bytes_silent(&r, sizeof(zend_ulong)) == FAILURE) {
+		status->last_unsafe = true;
+	}
+
+	return r;
+}
+
+static zend_long secure_range(php_random_status *status, zend_long min, zend_long max)
+{
+	zend_long result;
+
+	if (php_random_int_silent(min, max, &result) == FAILURE) {
+		status->last_unsafe = true;
+	}
+
+	return result;
+}
+
+const php_random_algo php_random_algo_secure = {
 	sizeof(zend_ulong),
-	secure_dynamic_generate_size,
 	0,
-	secure_generate,
 	NULL,
+	secure_generate,
+	secure_range,
 	NULL,
 	NULL
 };
 
-/* Secure end */
-
-/* User begin */
-
-static inline size_t user_dynamic_generate_size(void *state) {
-	php_random_engine_state_user *s = state;
-
-	return s->last_generate_size;
+static zend_object *php_random_engine_secure_new(zend_class_entry *ce)
+{
+	return &php_random_engine_common_init(ce, &random_engine_secure_object_handlers, &php_random_algo_secure)->std;
 }
+/* ---- SECURE END ---- */
 
-static uint64_t user_generate(void *state, bool *engine_unsafe) {
-	php_random_engine_state_user *s = state;
+/* ---- USER BEGIN ---- */
+static uint64_t user_generate(php_random_status *status)
+{
+	php_random_status_state_user *s = status->state;
 	uint64_t result = 0;
 	size_t size;
 	zval retval;
-	int i;
+	uint32_t i;
 
 	zend_call_known_instance_method_with_0_params(s->generate_method, s->object, &retval);
 
@@ -748,7 +795,7 @@ static uint64_t user_generate(void *state, bool *engine_unsafe) {
 	if (size > sizeof(uint64_t)) {
 		size = sizeof(uint64_t);
 	}
-	s->last_generate_size = size;
+	status->last_dynamic_generated_size = size;
 
 	if (size > 0) {
 		/* Endianness safe copy */
@@ -756,9 +803,8 @@ static uint64_t user_generate(void *state, bool *engine_unsafe) {
 			result += ((uint64_t) (unsigned char) Z_STRVAL(retval)[i]) << (8 * i);
 		}
 	} else {
-		if (engine_unsafe != NULL) {
-			*engine_unsafe = true;
-		}
+		status->last_unsafe = true;
+		return 0;
 	}
 
 	zval_ptr_dtor(&retval);
@@ -766,19 +812,25 @@ static uint64_t user_generate(void *state, bool *engine_unsafe) {
 	return result;
 }
 
-const php_random_engine_algo php_random_engine_algo_user = {
-	0,										/* does not support static generate size */
-	user_dynamic_generate_size,				/* always use dynamic_generate_size */
-	sizeof(php_random_engine_state_user),
+static zend_long user_range(php_random_status *status, zend_long min, zend_long max)
+{
+	return common_range(&php_random_algo_user, status, min, max);
+}
+
+const php_random_algo php_random_algo_user = {
+	0,
+	sizeof(php_random_status_state_user),
+	NULL,
 	user_generate,
+	user_range,
 	NULL,
 	NULL,
-	NULL
 };
+/* ---- USER END ---- */
 
-/* User end */
-
-static zend_object *php_random_randomizer_new(zend_class_entry *ce) {
+/* ---- Randomizer BEGIN ---- */
+static zend_object *php_random_randomizer_new(zend_class_entry *ce)
+{
 	php_random_randomizer *randomizer = zend_object_alloc(sizeof(php_random_randomizer), ce);
 
 	zend_object_std_init(&randomizer->std, ce);
@@ -789,30 +841,28 @@ static zend_object *php_random_randomizer_new(zend_class_entry *ce) {
 	return &randomizer->std;
 }
 
-static void php_random_randomizer_free_obj(zend_object *object) {
+static void randomizer_free_obj(zend_object *object) {
 	php_random_randomizer *randomizer = php_random_randomizer_from_obj(object);
 
-	if (randomizer->self_allocate && randomizer->state) {
-		efree(randomizer->state);
+	if (randomizer->is_userland_algo && randomizer->status) {
+		php_random_free_status(randomizer->status);
 	}
 
 	zend_object_std_dtor(&randomizer->std);
 }
 
-static void php_random_randomizer_common_init(php_random_randomizer *randomizer, zend_object *engine_object) {
+static void randomizer_common_init(php_random_randomizer *randomizer, zend_object *engine_object) {
 	if (engine_object->ce->type == ZEND_INTERNAL_CLASS) {
 		/* Internal classes always php_random_engine struct */
 		php_random_engine *engine = php_random_engine_from_obj(engine_object);
 		
 		/* Copy engine pointers */
 		randomizer->algo = engine->algo;
-		randomizer->state = engine->state;
-
-		/* Don't self allocate */
-		randomizer->self_allocate = 0;
+		randomizer->status = engine->status;
 	} else {
 		/* Self allocation */
-		php_random_engine_state_user *state = emalloc(sizeof(php_random_engine_state_user));
+		randomizer->status = php_random_allocate_status(&php_random_algo_user);
+		php_random_status_state_user *state = randomizer->status->state;
 		zend_string *mname;
 		zend_function *generate_method;
 
@@ -822,54 +872,76 @@ static void php_random_randomizer_common_init(php_random_randomizer *randomizer,
 
 		/* Create compatible state */
 		state->object = engine_object;
-		state->last_generate_size = 0;
 		state->generate_method = generate_method;
 
 		/* Copy common pointers */
-		randomizer->algo = &php_random_engine_algo_user;
-		randomizer->state = state;
+		randomizer->algo = &php_random_algo_user;
 
-		/* Marks self-allocated for Memory management */
-		randomizer->self_allocate = 1;
+		/* Mark self-allocated for memory management */
+		randomizer->is_userland_algo = true;
 	}
 }
+/* ---- Randomizer END ---- */
 
+/* ---- INTERNAL API BEGIN ---- */
 /* {{{ php_combined_lcg */
 PHPAPI double php_combined_lcg(void)
 {
-	if (!RANDOM_G(clcg).seeded) {
-		combinedlcg_seed_default(&RANDOM_G(clcg));
+	php_random_status *status = RANDOM_G(combined_lcg);
+
+	if (!status) {
+		status = php_random_allocate_status(&php_random_algo_combinedlcg);
+		combinedlcg_seed_default(status);
+		RANDOM_G(combined_lcg) = status;
 	}
 
-	return php_random_engine_algo_combinedlcg.generate(&RANDOM_G(clcg), NULL) * 4.656613e-10;
+	return php_random_algo_combinedlcg.generate(status) * 4.656613e-10;
 }
 /* }}} */
 
 /* {{{ php_mt_srand */
 PHPAPI void php_mt_srand(uint32_t seed)
 {
+	php_random_status *status = RANDOM_G(mersennetwister);
+
+	if (!status) {
+		status = php_random_allocate_status(&php_random_algo_mersennetwister);
+		mersennetwister_seed_default(status);
+		RANDOM_G(mersennetwister) = status;
+	}
+
 	/* Seed the generator with a simple uint32 */
-	mersennetwister_seed(&RANDOM_G(mt), (zend_long) seed);
+	mersennetwister_seed(status, (zend_long) seed);
 }
 /* }}} */
 
 /* {{{ php_mt_rand */
 PHPAPI uint32_t php_mt_rand(void)
 {
-	return php_random_engine_get_default_algo()->generate(php_random_engine_get_default_state(), NULL);
+	php_random_status *status = RANDOM_G(mersennetwister);
+
+	if (!status) {
+		status = php_random_allocate_status(&php_random_algo_mersennetwister);
+		mersennetwister_seed_default(status);
+		RANDOM_G(mersennetwister) = status;
+	}
+
+	return (uint32_t) php_random_algo_mersennetwister.generate(status);
 }
 /* }}} */
 
 /* {{{ php_mt_rand_range */
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max)
 {
-	return (zend_long) php_random_engine_range(
-		php_random_engine_get_default_algo(),
-		php_random_engine_get_default_state(),
-		min,
-		max,
-		NULL
-	);
+	php_random_status *status = RANDOM_G(mersennetwister);
+
+	if (!status) {
+		status = php_random_allocate_status(&php_random_algo_mersennetwister);
+		mersennetwister_seed_default(status);
+		RANDOM_G(mersennetwister) = status;
+	}
+
+	return php_random_algo_mersennetwister.range(status, min, max);
 }
 /* }}} */
 
@@ -877,25 +949,14 @@ PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max)
  * rand() allows min > max, mt_rand does not */
 PHPAPI zend_long php_mt_rand_common(zend_long min, zend_long max)
 {
-	uint64_t n;
-
-	if (RANDOM_G(mt).mode == MT_RAND_MT19937) {
-		return php_mt_rand_range(min, max);
-	}
-
-	/* Legacy mode deliberately not inside php_mt_rand_range()
-	 * to prevent other functions being affected */
-	n = (uint64_t) php_mt_rand() >> 1;
-	RAND_RANGE_BADSCALING(n, min, max, PHP_MT_RAND_MAX);
-
-	return n;
+	return php_mt_rand_range(min, max);
 }
 /* }}} */
 
 /* {{{ php_srand */
 PHPAPI void php_srand(zend_long seed)
 {
-	php_mt_srand(seed);
+	php_mt_srand((uint32_t) seed);
 }
 /* }}} */
 
@@ -1060,34 +1121,31 @@ PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool 
 }
 /* }}} */
 
-/* {{{ php_random_engine_get_default_algo */
-PHPAPI const php_random_engine_algo *php_random_engine_get_default_algo(void)
+/* {{{ php_random_default_algo */
+PHPAPI const php_random_algo *php_random_default_algo(void)
 {
-	return &php_random_engine_algo_mersennetwister;
+	return &php_random_algo_mersennetwister;
 }
 /* }}} */
 
-/* {{{ php_random_engine_get_default_state */
-PHPAPI void *php_random_engine_get_default_state(void)
+/* {{{ php_random_default_status */
+PHPAPI php_random_status *php_random_default_status(void)
 {
-	return &RANDOM_G(mt);
+	return RANDOM_G(mersennetwister);
 }
 /* }}} */
+/* ---- INTERNAL API END ---- */
 
-/* {{{ php_random_engine_range */
-PHPAPI uint64_t php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *engine_unsafe)
+/* ---- API: PCG64 BEGIN ---- */
+/* {{{ php_random_pcg64s_advance */
+PHPAPI void php_random_pcg64s_advance(php_random_status_state_pcg64s *status, uint64_t advance)
 {
-	zend_ulong umax = max - min;
-
-	/* (user-defined AND 64-bit ENV) OR 64-bit RNG OR umax over 32-bit range */
-	if ((algo->static_generate_size == 0 && sizeof(zend_ulong) > sizeof(uint32_t)) || algo->static_generate_size > sizeof(uint32_t) || umax > UINT32_MAX) {
-		return rand_range64(algo, state, umax, engine_unsafe) + min;
-	}
-
-	return ((uint64_t) rand_range32(algo, state, umax, engine_unsafe)) + min;
+	pcg64s_advance(status, advance);
 }
 /* }}} */
+/* ---- API: PCG64 END ---- */
 
+/* ---- PHP FUNCTION BEGIN ---- */
 /* {{{ Returns a value from the combined linear congruential generator */
 PHP_FUNCTION(lcg_value)
 {
@@ -1102,6 +1160,16 @@ PHP_FUNCTION(mt_srand)
 {
 	zend_long seed = 0;
 	zend_long mode = MT_RAND_MT19937;
+	php_random_status *status = RANDOM_G(mersennetwister);
+	php_random_status_state_mersennetwister *state;
+
+	if (!status) {
+		status = php_random_allocate_status(&php_random_algo_mersennetwister);
+		mersennetwister_seed_default(status);
+		RANDOM_G(mersennetwister) = status;
+	}
+
+	state = status->state;
 
 	ZEND_PARSE_PARAMETERS_START(0, 2)
 		Z_PARAM_OPTIONAL
@@ -1109,21 +1177,13 @@ PHP_FUNCTION(mt_srand)
 		Z_PARAM_LONG(mode)
 	ZEND_PARSE_PARAMETERS_END();
 
+	state->mode = mode;
+
 	if (ZEND_NUM_ARGS() == 0) {
-		if (php_random_bytes_silent(&seed, sizeof(zend_long)) == FAILURE) {
-			seed = GENERATE_SEED();
-		}
+		mersennetwister_seed_default(status);
+	} else {
+		mersennetwister_seed(status, (uint64_t) seed);;
 	}
-
-	switch (mode) {
-		case MT_RAND_PHP:
-			RANDOM_G(mt).mode = MT_RAND_PHP;
-			break;
-		default:
-			RANDOM_G(mt).mode = MT_RAND_MT19937;
-	}
-
-	php_mt_srand(seed);
 }
 /* }}} */
 
@@ -1239,12 +1299,16 @@ PHP_FUNCTION(random_int)
 	RETURN_LONG(result);
 }
 /* }}} */
+/* ---- PHP FUNCTION END ---- */
 
-/* {{{ Construct object */
+/* ---- PHP METHOD BEGIN ---- */
+
+/* {{{ Random\Engine\CombinedLCG::__construct */
 PHP_METHOD(Random_Engine_CombinedLCG, __construct)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_engine_state_combinedlcg *state = engine->state;
+	php_random_status *status = engine->status;
+	php_random_status_state_combinedlcg *state = status->state;
 	zend_long seed;
 	bool seed_is_null = true;
 	
@@ -1257,38 +1321,36 @@ PHP_METHOD(Random_Engine_CombinedLCG, __construct)
 		int i;
 
 		for (i = 0; i < 2; i++) {
-			if (php_random_bytes_silent(&state->s[i], sizeof(int32_t)) == FAILURE) {
+			if (php_random_bytes_silent(&state->state[i], sizeof(int32_t)) == FAILURE) {
 				zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 				RETURN_THROWS();
 			}
 		}
-
-		state->seeded = true;
 	} else {
-		engine->algo->seed(engine->state, seed);
+		engine->algo->seed(status, seed);
 	}
 }
 /* }}} */
 
-/* {{{ Generate a random number */
+/* {{{ Random\Engine\CombinedLCG::generate() */
 PHP_METHOD(Random_Engine_CombinedLCG, generate)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
 	uint64_t generated;
 	size_t size;
-	bool engine_unsafe = false;
 	zend_string *bytes;
 	int i;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
-	RANDOM_ENGINE_GENERATE(engine->algo, engine->state, generated, size, &engine_unsafe);
-	if (engine_unsafe) {
+	generated = engine->algo->generate(engine->status);
+	size = engine->status->last_dynamic_generated_size;
+	if (engine->status->last_unsafe) {
 		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 		RETURN_THROWS();
 	}
 
-	bytes = zend_string_alloc(size, 0);
+	bytes = zend_string_alloc(size, false);
 
 	/* Endianness safe copy */
 	for (i = 0; i < size; i++) {
@@ -1300,68 +1362,68 @@ PHP_METHOD(Random_Engine_CombinedLCG, generate)
 }
 /* }}} */
 
-/* {{{ Serialize object */
+/* {{{ Random\Engine\CombinedLCG::__serialize() */
 PHP_METHOD(Random_Engine_CombinedLCG, __serialize)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	zval tmp;
+	zval t;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
 	array_init(return_value);
 
 	/* members */
-	ZVAL_ARR(&tmp, zend_std_get_properties(&engine->std));
-	Z_TRY_ADDREF(tmp);
-	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &tmp);
+	ZVAL_ARR(&t, zend_std_get_properties(&engine->std));
+	Z_TRY_ADDREF(t);
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &t);
 
 	/* state */
-	array_init(&tmp);
-	if (engine->algo->serialize(engine->state, Z_ARRVAL(tmp)) == FAILURE) {
+	array_init(&t);
+	if (!engine->algo->serialize(engine->status, Z_ARRVAL(t))) {
 		zend_throw_exception(NULL, "Engine serialize failed", 0);
 		RETURN_THROWS();
 	}
-	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &tmp);
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &t);
 }
 /* }}} */
 
-/* {{{ Unserialize object */
+/* {{{ Random\Engine\CombinedLCG::__unserialize() */
 PHP_METHOD(Random_Engine_CombinedLCG, __unserialize)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	HashTable *data;
-	zval *tmp;
+	HashTable *d;
+	zval *t;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_ARRAY_HT(data);
+		Z_PARAM_ARRAY_HT(d);
 	ZEND_PARSE_PARAMETERS_END();
 
 	/* members */
-	tmp = zend_hash_index_find(data, 0);
-	if (!tmp || Z_TYPE_P(tmp) != IS_ARRAY) {
+	t = zend_hash_index_find(d, 0);
+	if (!t || Z_TYPE_P(t) != IS_ARRAY) {
 		zend_throw_exception(NULL, "Incomplete or ill-formed serialization data", 0);
 		RETURN_THROWS();
 	}
-	object_properties_load(&engine->std, Z_ARRVAL_P(tmp));
+	object_properties_load(&engine->std, Z_ARRVAL_P(t));
 
 	/* state */
-	tmp = zend_hash_index_find(data, 1);
-	if (!tmp || Z_TYPE_P(tmp) != IS_ARRAY) {
+	t = zend_hash_index_find(d, 1);
+	if (!t || Z_TYPE_P(t) != IS_ARRAY) {
 		zend_throw_exception(NULL, "Incomplete or ill-formed serialization data", 0);
 		RETURN_THROWS();
 	}
-	if (engine->algo->unserialize(engine->state, Z_ARRVAL_P(tmp)) == FAILURE) {
+	if (!engine->algo->unserialize(engine->status, Z_ARRVAL_P(t))) {
 		zend_throw_exception(NULL, "Engine unserialize failed", 0);
 		RETURN_THROWS();
 	}
 }
 /* }}} */
 
-/* {{{ DebugInfo */
+/* {{{ Random\Engine\CombinedLCG::__debugInfo() */
 PHP_METHOD(Random_Engine_CombinedLCG, __debugInfo)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	zval tmp;
+	zval t;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
@@ -1371,21 +1433,21 @@ PHP_METHOD(Random_Engine_CombinedLCG, __debugInfo)
 	ZVAL_ARR(return_value, zend_array_dup(engine->std.properties));
 
 	if (engine->algo->serialize) {
-		array_init(&tmp);
-		if (engine->algo->serialize(engine->state, Z_ARRVAL(tmp)) == FAILURE) {
+		array_init(&t);
+		if (!engine->algo->serialize(engine->status, Z_ARRVAL(t))) {
 			zend_throw_exception(NULL, "Engine serialize failed", 0);
 			RETURN_THROWS();
 		}
-		zend_hash_str_add(Z_ARR_P(return_value), "__states", sizeof("__states") - 1, &tmp);
+		zend_hash_str_add(Z_ARR_P(return_value), "__states", sizeof("__states") - 1, &t);
 	}
 }
 /* }}} */
 
-/* {{{ Construct object */
+/* {{{ Random\Engine\MersenneTwister::__construct() */
 PHP_METHOD(Random_Engine_MersenneTwister, __construct)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_engine_state_mersennetwister *state = engine->state;
+	php_random_status_state_mersennetwister *state = engine->status->state;
 	zend_long seed, mode = MT_RAND_MT19937;
 	bool seed_is_null = true;
 
@@ -1411,48 +1473,28 @@ PHP_METHOD(Random_Engine_MersenneTwister, __construct)
 		}
 	}
 
-	engine->algo->seed(engine->state, seed);
+	engine->algo->seed(engine->status, seed);
 }
 /* }}} */
 
-/* {{{ Construct object */
+/* {{{ Random\Engine\PCG64::__construct */
 PHP_METHOD(Random_Engine_PCG64, __construct)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_engine_state_pcg64 *state = engine->state;
-	zend_string *str_seed = NULL, *str_seq = NULL;
-	zend_long int_seed = 0, int_seq = 0;
+	php_random_status_state_pcg64s *state = engine->status->state;
+	zend_string *str_seed = NULL;
+	zend_long int_seed = 0;
 	bool seed_is_null = true;
 	int i, j;
 	uint64_t t[2];
 
-	ZEND_PARSE_PARAMETERS_START(0, 2)
+	ZEND_PARSE_PARAMETERS_START(0, 1)
 		Z_PARAM_OPTIONAL;
 		Z_PARAM_STR_OR_LONG_OR_NULL(str_seed, int_seed, seed_is_null);
-		Z_PARAM_STR_OR_LONG(str_seq, int_seq);
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (str_seq) {
-		/* char (8 bit) * 16 = 128 bits */
-		if (ZSTR_LEN(str_seq) == 16) {
-			/* Endianness safe copy */
-			for (i = 0; i < 2; i++) {
-				t[i] = 0;
-				for (j = 0; j < 8; j++) {
-					t[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seq)[(i * 8) + j]) << (j * 8);
-				}
-			}
-			UINT128_CON(t[0], t[1], state->inc);
-		} else {
-			zend_argument_value_error(2, "sequence strings must be 16 bytes");
-			RETURN_THROWS();
-		}
-	} else {
-		UINT128_CON(0ULL, int_seq, state->inc);
-	}
-
 	if (seed_is_null) {
-		if (php_random_bytes_silent(&state->s, sizeof(random_uint128_t)) == FAILURE) {
+		if (php_random_bytes_silent(&state->state, sizeof(php_random_uint128_t)) == FAILURE) {
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 			RETURN_THROWS();
 		}
@@ -1467,65 +1509,41 @@ PHP_METHOD(Random_Engine_PCG64, __construct)
 						t[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
 					}
 				}
-				UINT128_CON(t[0], t[1], state->s);
+				pcg64s_seed_128(engine->status, php_random_uint128_constant(t[0], t[1]));
 			} else {
 				zend_argument_value_error(1, "state strings must be 16 bytes");
 				RETURN_THROWS();
 			}
 		} else {
-			UINT128_CON(0ULL, int_seed, state->s);
+			engine->algo->seed(engine->status, int_seed);
 		}
-
-		pcg64_seed_full(state);
 	}
 }
 /* }}} */
 
-/* {{{ Jump a state */
+/* {{{ Random\Engine\PCG64::jump() */
 PHP_METHOD(Random_Engine_PCG64, jump)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_engine_state_pcg64 *s = engine->state;
+	php_random_status_state_pcg64s *state = engine->status->state;
 	zend_long advance = 0;
-	random_uint128_t con, acc_mul, acc_add, cur_mul, cur_add, t;
-	UINT128_CON(2549297995355413924ULL, 4865540595714422341ULL, con);
-	UINT128_CON(0ULL, 1ULL, acc_mul);
-	UINT128_CON(0ULL, 0ULL, acc_add);
-	cur_mul = con;
-	cur_add = s->inc;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_LONG(advance);
 	ZEND_PARSE_PARAMETERS_END();
 
-	while (advance > 0) {
-		if (advance & 1) {
-			UINT128_MUL(acc_mul, cur_mul, acc_mul);
-			
-			UINT128_MUL(acc_add, cur_mul, acc_add);
-			UINT128_ADD(acc_add, cur_add, acc_add);
-		}
-		UINT128_CON(0ULL, 1ULL, t);
-		UINT128_ADD(cur_mul, t, t);
-		UINT128_MUL(t, cur_add, cur_add);
-
-		UINT128_MUL(cur_mul, cur_mul, cur_mul);
-		advance /= 2;
-	}
-
-	UINT128_MUL(acc_mul, s->s, s->s);
-	UINT128_ADD(s->s, acc_add, s->s);
+	pcg64s_advance(state, advance);
 }
 /* }}} */
 
-/* {{{ Construct object */
+/* {{{ Random\Randomizer::__construct() */
 PHP_METHOD(Random_Randomizer, __construct)
 {
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
-	zend_object *engine_object = 0;
+	zend_object *engine_object = NULL;
 	zval zengine_object;
 	zend_string *pname;
-	
+
 	ZEND_PARSE_PARAMETERS_START(0, 1)
 		Z_PARAM_OPTIONAL
 		Z_PARAM_OBJ_OF_CLASS_OR_NULL(engine_object, random_ce_Random_Engine);
@@ -1546,7 +1564,7 @@ PHP_METHOD(Random_Randomizer, __construct)
 	zend_std_write_property(&randomizer->std, pname, &zengine_object, NULL);
 	zend_string_release(pname);
 
-	php_random_randomizer_common_init(randomizer, engine_object);
+	randomizer_common_init(randomizer, engine_object);
 }
 /* }}} */
 
@@ -1556,21 +1574,19 @@ PHP_METHOD(Random_Randomizer, getInt)
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
 	uint64_t result;
 	zend_long min, max;
-	size_t generate_size = 0;
 	int argc = ZEND_NUM_ARGS();
-	bool engine_unsafe = false;
 
 	if (argc == 0) {
-		RANDOM_ENGINE_GENERATE(randomizer->algo, randomizer->state, result, generate_size, &engine_unsafe);
-		if (generate_size > sizeof(zend_long)) {
+		result = randomizer->algo->generate(randomizer->status);
+		if (randomizer->status->last_dynamic_generated_size > sizeof(zend_long)) {
 			zend_throw_exception(spl_ce_RuntimeException, "Generated value exceeds size of int", 0);
 			RETURN_THROWS();
 		}
-		if (engine_unsafe) {
+		if (randomizer->status->last_unsafe) {
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 			RETURN_THROWS();
 		}
-		RETURN_LONG((zend_long) result >> 1);
+		RETURN_LONG((zend_long) (result >> 1));
 	}
 
 	ZEND_PARSE_PARAMETERS_START(2, 2)
@@ -1583,8 +1599,8 @@ PHP_METHOD(Random_Randomizer, getInt)
 		RETURN_THROWS();
 	}
 
-	result = (zend_long) php_random_engine_range(randomizer->algo, randomizer->state, min, max, &engine_unsafe);
-	if (engine_unsafe) {
+	result = randomizer->algo->range(randomizer->status, min, max);
+	if (randomizer->status->last_unsafe) {
 		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 		RETURN_THROWS();
 	}
@@ -1600,9 +1616,8 @@ PHP_METHOD(Random_Randomizer, getBytes)
 	zend_string *retval;
 	zend_long length;
 	uint64_t result;
-	size_t total_size = 0, required_size, generated_size;
-	bool engine_unsafe = false;
-	int i;
+	size_t total_size = 0, required_size;
+	uint32_t i;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_LONG(length)
@@ -1617,14 +1632,13 @@ PHP_METHOD(Random_Randomizer, getBytes)
 	required_size = length;
 
 	while (total_size < required_size) {
-		RANDOM_ENGINE_GENERATE(randomizer->algo, randomizer->state, result, generated_size, &engine_unsafe);
-		if (engine_unsafe) {
+		result = randomizer->algo->generate(randomizer->status);
+		if (randomizer->status->last_unsafe) {
 			zend_string_free(retval);
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
-			RETURN_THROWS();
+			RETURN_THROWS();			
 		}
-
-		for (i = 0; i < generated_size; i++) {
+		for (i = 0; i< randomizer->status->last_dynamic_generated_size; i++) {
 			ZSTR_VAL(retval)[total_size++] = (result >> (i * 8) & 0xff);
 			if (total_size >= required_size) {
 				break;
@@ -1648,7 +1662,7 @@ PHP_METHOD(Random_Randomizer, shuffleArray)
 	ZEND_PARSE_PARAMETERS_END();
 
 	ZVAL_DUP(return_value, array);
-	if (php_array_data_shuffle(randomizer->algo, randomizer->state, return_value) == FAILURE) {
+	if (php_array_data_shuffle(randomizer->algo, randomizer->status, return_value) == FAILURE) {
 		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 		RETURN_THROWS();
 	}
@@ -1670,41 +1684,41 @@ PHP_METHOD(Random_Randomizer, shuffleString)
 	}
 
 	RETVAL_STRINGL(ZSTR_VAL(string), ZSTR_LEN(string));
-	if (php_string_shuffle(randomizer->algo, randomizer->state, Z_STRVAL_P(return_value), (zend_long) Z_STRLEN_P(return_value)) == FAILURE) {
+	if (php_string_shuffle(randomizer->algo, randomizer->status, Z_STRVAL_P(return_value), (zend_long) Z_STRLEN_P(return_value)) == FAILURE) {
 		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 		RETURN_THROWS();
 	}
 }
 /* }}} */
 
-/* {{{ Serialize object */
+/* {{{ Random\Randomizer::__serialize() */
 PHP_METHOD(Random_Randomizer, __serialize)
 {
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
-	zval tmp;
+	zval t;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
 	array_init(return_value);
-	ZVAL_ARR(&tmp, zend_std_get_properties(&randomizer->std));
-	Z_TRY_ADDREF(tmp);
-	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &tmp);
+	ZVAL_ARR(&t, zend_std_get_properties(&randomizer->std));
+	Z_TRY_ADDREF(t);
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &t);
 }
 /* }}} */
 
-/* {{{ Unserialize object */
+/* {{{ Random\Randomizer::__unserialize() */
 PHP_METHOD(Random_Randomizer, __unserialize)
 {
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
-	HashTable *data;
+	HashTable *d;
 	zval *members_zv;
 	zval *zengine;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_ARRAY_HT(data);
+		Z_PARAM_ARRAY_HT(d);
 	ZEND_PARSE_PARAMETERS_END();
 
-	members_zv = zend_hash_index_find(data, 0);
+	members_zv = zend_hash_index_find(d, 0);
 	if (!members_zv || Z_TYPE_P(members_zv) != IS_ARRAY) {
 		zend_throw_exception(NULL, "Incomplete or ill-formed serialization data", 0);
 		RETURN_THROWS();
@@ -1717,10 +1731,13 @@ PHP_METHOD(Random_Randomizer, __unserialize)
 		RETURN_THROWS();
 	}
 
-	php_random_randomizer_common_init(randomizer, Z_OBJ_P(zengine));
+	randomizer_common_init(randomizer, Z_OBJ_P(zengine));
 }
 /* }}} */
 
+/* ---- PHP METHOD END ---- */
+
+/* ---- PHP MODULE BEGIN ---- */
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(random)
 {
@@ -1741,31 +1758,31 @@ PHP_MINIT_FUNCTION(random)
 	random_ce_Random_Engine_CombinedLCG->create_object = php_random_engine_combinedlcg_new;
 	memcpy(&random_engine_combinedlcg_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	random_engine_combinedlcg_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_combinedlcg_object_handlers.free_obj = php_random_engine_common_free_obj;
-	random_engine_combinedlcg_object_handlers.clone_obj = php_random_engine_common_clone_obj;
+	random_engine_combinedlcg_object_handlers.free_obj = engine_common_free_obj;
+	random_engine_combinedlcg_object_handlers.clone_obj = engine_common_clone_obj;
 
 	/* Random\Engine\PCG64 */
 	random_ce_Random_Engine_PCG64 = register_class_Random_Engine_PCG64(random_ce_Random_SeedableEngine, random_ce_Random_SerializableEngine);
 	random_ce_Random_Engine_PCG64->create_object = php_random_engine_pcg64_new;
 	memcpy(&random_engine_pcg64_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	random_engine_pcg64_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_pcg64_object_handlers.free_obj = php_random_engine_common_free_obj;
-	random_engine_pcg64_object_handlers.clone_obj = php_random_engine_common_clone_obj;
+	random_engine_pcg64_object_handlers.free_obj = engine_common_free_obj;
+	random_engine_pcg64_object_handlers.clone_obj = engine_common_clone_obj;
 
 	/* Random\Engine\MersenneTwister */
 	random_ce_Random_Engine_MersenneTwister = register_class_Random_Engine_MersenneTwister(random_ce_Random_SeedableEngine, random_ce_Random_SerializableEngine);
 	random_ce_Random_Engine_MersenneTwister->create_object = php_random_engine_mersennetwister_new;
 	memcpy(&random_engine_mersennetwister_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	random_engine_mersennetwister_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_mersennetwister_object_handlers.free_obj = php_random_engine_common_free_obj;
-	random_engine_mersennetwister_object_handlers.clone_obj = php_random_engine_common_clone_obj;
+	random_engine_mersennetwister_object_handlers.free_obj = engine_common_free_obj;
+	random_engine_mersennetwister_object_handlers.clone_obj = engine_common_clone_obj;
 
 	/* Random\Engine\Secure */
 	random_ce_Random_Engine_Secure = register_class_Random_Engine_Secure(random_ce_Random_CryptoSafeEngine);
 	random_ce_Random_Engine_Secure->create_object = php_random_engine_secure_new;
 	memcpy(&random_engine_secure_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	random_engine_secure_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_secure_object_handlers.free_obj = php_random_engine_common_free_obj;
+	random_engine_secure_object_handlers.free_obj = engine_common_free_obj;
 	random_engine_secure_object_handlers.clone_obj = NULL;
 
 	/* Random\Randomizer */
@@ -1773,16 +1790,17 @@ PHP_MINIT_FUNCTION(random)
 	random_ce_Random_Randomizer->create_object = php_random_randomizer_new;
 	memcpy(&random_randomizer_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	random_randomizer_object_handlers.offset = XtOffsetOf(php_random_randomizer, std);
-	random_randomizer_object_handlers.free_obj = php_random_randomizer_free_obj;
+	random_randomizer_object_handlers.free_obj = randomizer_free_obj;
 	random_randomizer_object_handlers.clone_obj = NULL;
 
 	REGISTER_LONG_CONSTANT("MT_RAND_MT19937", MT_RAND_MT19937, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MT_RAND_PHP",     MT_RAND_PHP, CONST_CS | CONST_PERSISTENT);
 
 	RANDOM_G(random_fd) = -1;
-	memset(&RANDOM_G(mt), 0, sizeof(php_random_engine_state_mersennetwister));
-	memset(&RANDOM_G(clcg), 0, sizeof(php_random_engine_state_combinedlcg));
 
+	RANDOM_G(combined_lcg) = NULL;
+	RANDOM_G(mersennetwister) = NULL;
+	
 	return SUCCESS;
 }
 /* }}} */
@@ -1793,6 +1811,21 @@ PHP_MSHUTDOWN_FUNCTION(random)
 	if (RANDOM_G(random_fd) > 0) {
 		close(RANDOM_G(random_fd));
 		RANDOM_G(random_fd) = -1;
+	}
+
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ PHP_RSHUTDOWN_FUNCTION */
+PHP_RSHUTDOWN_FUNCTION(random)
+{
+	if (RANDOM_G(combined_lcg)) {
+		php_random_free_status(RANDOM_G(combined_lcg));
+	}
+
+	if (RANDOM_G(mersennetwister)) {
+		php_random_free_status(RANDOM_G(mersennetwister));
 	}
 
 	return SUCCESS;
@@ -1817,7 +1850,7 @@ zend_module_entry random_module_entry = {
 	PHP_MINIT(random),			/* PHP_MINIT - Module initialization */
 	PHP_MSHUTDOWN(random),		/* PHP_MSHUTDOWN - Module shutdown */
 	PHP_RINIT(random),			/* PHP_RINIT - Request initialization */
-	NULL,						/* PHP_RSHUTDOWN - Request shutdown */
+	PHP_RSHUTDOWN(random),		/* PHP_RSHUTDOWN - Request shutdown */
 	NULL,						/* PHP_MINFO - Module info */
 	PHP_VERSION,				/* Version */
 	PHP_MODULE_GLOBALS(random),	/* ZTS Module globals */
@@ -1827,6 +1860,7 @@ zend_module_entry random_module_entry = {
 	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
+/* ---- PHP MODULE END ---- */
 
 #ifdef COMPILE_DL_RANDOM
 # ifdef ZTS

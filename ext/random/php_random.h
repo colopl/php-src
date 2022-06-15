@@ -27,16 +27,15 @@
    |                     Melissa O'Neill <oneill@pcg-random.org>          |
    +----------------------------------------------------------------------+
 */
+
 #ifndef PHP_RANDOM_H
 # define PHP_RANDOM_H
 
-/* System Rand functions */
-# ifndef RAND_MAX
-#  define RAND_MAX PHP_MT_RAND_MAX
-# endif
+/* ---- API: COMBINED LCG BEGIN ---- */
+PHPAPI double php_combined_lcg(void);
+/* ---- API: COMBINED LCG END ---- */
 
-# define PHP_RAND_MAX PHP_MT_RAND_MAX
-
+/* ---- API: MT BEGIN ---- */
 /*
  * A bit of tricky math here.  We want to avoid using a modulus because
  * that simply tosses the high-order bits and might skew the distribution
@@ -78,110 +77,198 @@
 
 # define MT_N (624)
 
-# define php_random_bytes_throw(b, s) php_random_bytes((b), (s), 1)
-# define php_random_bytes_silent(b, s) php_random_bytes((b), (s), 0)
-
-# define php_random_int_throw(min, max, result) \
-	php_random_int((min), (max), (result), 1)
-# define php_random_int_silent(min, max, result) \
-	php_random_int((min), (max), (result), 0)
-
-# if !defined(__SIZEOF_INT128__) || defined(FORCE_EMULATE_128)
-#  define RANDOM_PCG64_EMULATED
-typedef struct _random_uint128_t {
-	uint64_t hi;
-	uint64_t lo;
-} random_uint128_t;
-#  define UINT128_HI64(value)	value.hi;
-#  define UINT128_LO64(value)	value.lo;
-#  define UINT128_CON(x, y, result)	\
-	do { \
-		result.hi = x; \
-		result.lo = y; \
-	} while (0);
-#  define UINT128_ADD(x, y, result)	\
-	do { \
-		const uint64_t _lo = (x.lo + y.lo), _hi = (x.hi + y.hi + (_lo < x.lo)); \
-		result.hi = _hi; \
-		result.lo = _lo; \
-	} while (0);
-#  define UINT128_MUL(x, y, result)	\
-	do { \
-		const uint64_t \
-			_x0 = x.lo & 0xffffffffULL, \
-			_x1 = x.lo >> 32, \
-			_y0 = y.lo & 0xffffffffULL, \
-			_y1 = y.lo >> 32, \
-			_z0 = ((_x1 * _y0 + (_x0 * _y0 >> 32)) & 0xffffffffULL) + _x0 * _y1; \
-		result.hi = x.hi * y.lo + x.lo * y.hi; \
-		result.lo = x.lo * y.lo; \
-		result.hi += _x1 * _y1 + ((_x1 * _y0 + (_x0 * _y0 >> 32)) >> 32) + (_z0 >> 32); \
-	} while (0);
-#  define PCG64_ROTL1OR1(x, result)	\
-	do { \
-		result.hi = x.hi << 1U | x.lo >> 63U; \
-		result.lo = x.lo << 1U | 1U; \
-	} while (0);
-#  define PCG64_ROTR64(x, result)	\
-	do { \
-		const uint64_t _v = (x.hi ^ x.lo), _s = x.hi >> 58U; \
-		result = (_v >> _s) | (_v << ((-_s) & 63)); \
-	} while (0);
-# else
-typedef __uint128_t random_uint128_t;
-#  define UINT128_HI64(value)	(uint64_t) (value >> 64);
-#  define UINT128_LO64(value)	(uint64_t) value;
-#  define UINT128_CON(x, y, result)	result = (((random_uint128_t) x << 64) + y);
-#  define UINT128_ADD(x, y, result)	result = x + y;
-#  define UINT128_MUL(x, y, result)	result = x * y;
-#  define PCG64_ROTL1OR1(x, result)	result = (x << 1U) | 1U;
-#  define PCG64_ROTR64(x, result)	\
-	do { \
-		uint64_t _v = ((uint64_t) (x >> 64U)) ^ (uint64_t) x, _s = x >> 122U; \
-		result = (_v >> _s) | (_v << ((-_s) & 63)); \
-	} while (0);
-# endif
-
-# define RANDOM_ENGINE_GENERATE(algo, state, result, generated_size, rng_unsafe)	\
-	do { \
-		result = algo->generate(state, rng_unsafe); \
-		generated_size = algo->static_generate_size != 0 \
-			? algo->static_generate_size \
-			: algo->dynamic_generate_size(state) \
-		; \
-	} while (0);
-# define RANDOM_ENGINE_GENERATE_SILENT(algo, state, result, generate_size)	RANDOM_ENGINE_GENERATE(algo, state, result, generated_size, NULL)
-
-PHPAPI double php_combined_lcg(void);
-
-PHPAPI void php_srand(zend_long seed);
-PHPAPI zend_long php_rand(void);
-
 PHPAPI void php_mt_srand(uint32_t seed);
 PHPAPI uint32_t php_mt_rand(void);
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max);
 PHPAPI zend_long php_mt_rand_common(zend_long min, zend_long max);
+/* ---- API: MT END ---- */
+
+/* ---- API: RAND BEGIN ---- */
+# ifndef RAND_MAX
+#  define RAND_MAX PHP_MT_RAND_MAX
+# endif
+
+# define PHP_RAND_MAX PHP_MT_RAND_MAX
+
+PHPAPI void php_srand(zend_long seed);
+PHPAPI zend_long php_rand(void);
+/* ---- API: RAND END ---- */
+
+/* ---- API: UINT128 / PCG64 BEGIN ---- */
+# if !defined(__SIZEOF_INT128__) || defined(PHP_RANDOM_FORCE_EMULATE_128)
+typedef struct _php_random_uint128_t {
+	uint64_t hi;
+	uint64_t lo;
+} php_random_uint128_t;
+
+static inline uint64_t php_random_uint128_hi(php_random_uint128_t num)
+{
+	return num.hi;
+}
+
+static inline uint64_t php_random_uint128_lo(php_random_uint128_t num)
+{
+	return num.lo;
+}
+
+static inline php_random_uint128_t php_random_uint128_constant(uint64_t hi, uint64_t lo)
+{
+	php_random_uint128_t r;
+	
+	r.hi = hi;
+	r.lo = lo;
+
+	return r;
+}
+
+static inline php_random_uint128_t php_random_uint128_add(php_random_uint128_t num1, php_random_uint128_t num2)
+{
+	php_random_uint128_t r;
+	
+	r.lo = (num1.lo + num2.lo);
+	r.hi = (num1.hi + num2.hi + (r.lo < num1.lo));
+
+	return r;
+}
+
+static inline php_random_uint128_t php_random_uint128_multiply(php_random_uint128_t num1, php_random_uint128_t num2)
+{
+	php_random_uint128_t r;
+	const uint64_t
+		x0 = num1.lo & 0xffffffffULL,
+		x1 = num1.lo >> 32,
+		y0 = num2.lo & 0xffffffffULL,
+		y1 = num2.lo >> 32,
+		z0 = (((x1 * y0) + (x0 * y0 >> 32)) & 0xffffffffULL) + x0 * y1;
+	
+	r.hi = num1.hi * num2.lo + num1.lo * num2.hi;
+	r.lo = num1.lo * num2.lo;
+	r.hi += x1 * y1 + ((x1 * y0 + (x0 * y0 >> 32)) >> 32) + (z0 >> 32);
+
+	return r;
+}
+
+static inline uint64_t php_random_pcg64s_rotr64(php_random_uint128_t num)
+{
+	const uint64_t
+		v = (num.hi ^ num.lo),
+		s = num.hi >> 58U;
+
+	return (v >> s) | (v << ((-s) & 63));
+}
+# else
+typedef __uint128_t php_random_uint128_t;
+
+static inline uint64_t php_random_uint128_hi(php_random_uint128_t num)
+{
+	return (uint64_t) (num >> 64);
+}
+
+static inline uint64_t php_random_uint128_lo(php_random_uint128_t num)
+{
+	return (uint64_t) num;
+}
+
+static inline php_random_uint128_t php_random_uint128_constant(uint64_t hi, uint64_t lo)
+{
+	php_random_uint128_t r;
+
+	r = ((php_random_uint128_t) hi << 64) + lo;
+
+	return r;
+}
+
+static inline php_random_uint128_t php_random_uint128_add(php_random_uint128_t num1, php_random_uint128_t num2)
+{
+	return num1 + num2;
+}
+
+static inline php_random_uint128_t php_random_uint128_multiply(php_random_uint128_t num1, php_random_uint128_t num2)
+{
+	return num1 * num2;
+}
+
+static inline uint64_t php_random_pcg64s_rotr64(php_random_uint128_t num)
+{
+	const uint64_t 
+		v = ((uint64_t) (num >> 64U)) ^ (uint64_t) num,
+		s = num >> 122U;
+	
+	return (v >> s) | (v << ((-s) & 63));
+}
+# endif
+/* ---- API: UINT128 / PCG64 END ---- */
+
+/* ---- API: SECURE BEGIN ---- */
+# define php_random_bytes_throw(b, s) php_random_bytes((b), (s), 1)
+# define php_random_bytes_silent(b, s) php_random_bytes((b), (s), 0)
+# define php_random_int_throw(min, max, result) php_random_int((min), (max), (result), 1)
+# define php_random_int_silent(min, max, result) php_random_int((min), (max), (result), 0)
 
 PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw);
 PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool should_throw);
+/* ---- API: SECURE END ---- */
 
-typedef struct _php_random_engine_algo {
-	const size_t static_generate_size;						/* Specifies the generated size. if the generated size is to be changed dynamically to set 0. */
-	size_t (*dynamic_generate_size)(void *state);			/* Pointer to get the dynamic generation size. non-nullable. */
-	const size_t state_size;								/* Size of the structure to hold the state. if not needed to set 0. */
-	uint64_t (*generate)(void *state, bool *rng_unsafe);	/* Pointer to get random number. non-nullable. */
-	void (*seed)(void *state, const uint64_t seed);			/* Pointer to seeding state. nullable. */
-	int (*serialize)(void *state, HashTable *data);			/* Pointer to serialize state. nullable. */
-	int (*unserialize)(void *state, HashTable *data);		/* Pointer to unserialize state. nullable. */
-} php_random_engine_algo;
+/* ---- STATE BEGIN ---- */
+typedef struct _php_random_status_ {
+	size_t last_dynamic_generated_size;
+	bool last_unsafe;
+	void *state;
+} php_random_status;
 
-PHPAPI const php_random_engine_algo *php_random_engine_get_default_algo(void);
-PHPAPI void *php_random_engine_get_default_state(void);
+typedef struct _php_random_status_state_combinedlcg {
+	int32_t state[2];
+} php_random_status_state_combinedlcg;
 
-PHPAPI uint64_t php_random_engine_range(const php_random_engine_algo *algo, void *state, zend_long min, zend_long max, bool *rng_unsafe);
+typedef struct _php_random_status_state_mersennetwister {
+	uint32_t state[MT_N];
+	uint32_t count;
+	uint32_t mode;
+} php_random_status_state_mersennetwister;
 
-extern zend_module_entry random_module_entry;
-# define phpext_random_ptr &random_module_entry
+typedef struct _php_random_status_state_pcg64s {
+	php_random_uint128_t state;
+} php_random_status_state_pcg64s;
+
+typedef struct _php_random_status_state_user {
+	zend_object *object;
+	zend_function *generate_method;
+} php_random_status_state_user;
+/* ---- STATE END ---- */
+
+/* ---- ALGORITHM BEGIN ---- */
+typedef struct _php_random_algo {
+	const size_t generate_size;
+	const size_t state_size;
+	void (*seed)(php_random_status *status, uint64_t seed);
+	uint64_t (*generate)(php_random_status *status);
+	zend_long (*range)(php_random_status *status, zend_long min, zend_long max);
+	bool (*serialize)(php_random_status *status, HashTable *data);
+	bool (*unserialize)(php_random_status *status, HashTable *data);
+} php_random_algo;
+
+extern PHPAPI const php_random_algo php_random_algo_combinedlcg;
+extern PHPAPI const php_random_algo php_random_algo_mersennetwister;
+extern PHPAPI const php_random_algo php_random_algo_pcg64s;
+extern PHPAPI const php_random_algo php_random_algo_secure;
+extern PHPAPI const php_random_algo php_random_algo_user;
+
+# define PHP_RANDOM_ALGO_IS_DYNAMIC(algo)	((algo)->generate_size == 0)
+/* ---- ALGORITHM END ---- */
+
+/* ---- CLASS ENTRIES BEGIN ---- */
+typedef struct _php_random_engine {
+	const php_random_algo *algo;
+	php_random_status *status;
+	zend_object std;
+} php_random_engine;
+
+typedef struct _php_random_randomizer {
+	const php_random_algo *algo;
+	php_random_status *status;
+	bool is_userland_algo;
+	zend_object std;
+} php_random_randomizer;
 
 extern PHPAPI zend_class_entry *random_ce_Random_Engine;
 extern PHPAPI zend_class_entry *random_ce_Random_CryptoSafeEngine;
@@ -194,70 +281,55 @@ extern PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
 extern PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
-extern const php_random_engine_algo php_random_engine_algo_combinedlcg;
-extern const php_random_engine_algo php_random_engine_algo_mersennetwister;
-extern const php_random_engine_algo php_random_engine_algo_pcg64;
-extern const php_random_engine_algo php_random_engine_algo_secure;
-extern const php_random_engine_algo php_random_engine_algo_user;
-
-typedef struct _php_random_engine {
-	const php_random_engine_algo *algo;
-	void *state;
-	zend_object std;
-} php_random_engine;
-
-typedef struct _php_random_engine_state_combinedlcg {
-	int32_t s[2];
-	bool seeded;
-} php_random_engine_state_combinedlcg;
-
-typedef struct _php_random_engine_state_mersennetwister {
-	uint32_t s[MT_N];
-	int cnt;
-	zend_long mode;
-	bool seeded;
-} php_random_engine_state_mersennetwister;
-
-typedef struct _php_random_engine_state_pcg64 {
-	random_uint128_t s;
-	random_uint128_t inc;
-} php_random_engine_state_pcg64;
-
-typedef struct _php_random_engine_state_user {
-	zend_object *object;
-	zend_function *generate_method;
-	size_t last_generate_size;
-} php_random_engine_state_user;
-
-typedef struct _php_random_randomizer {
-	const php_random_engine_algo *algo;
-	void *state;
-	bool self_allocate;
-	zend_object std;
-} php_random_randomizer;
-
-static inline php_random_engine *php_random_engine_from_obj(zend_object *obj) {
-	return (php_random_engine *)((char *)(obj) - XtOffsetOf(php_random_engine, std));
+static inline php_random_engine *php_random_engine_from_obj(zend_object *object) {
+	return (php_random_engine *)((char *)(object) - XtOffsetOf(php_random_engine, std));
 }
 
-static inline php_random_randomizer *php_random_randomizer_from_obj(zend_object *obj) {
-	return (php_random_randomizer *)((char *)(obj) - XtOffsetOf(php_random_randomizer, std));
+static inline php_random_randomizer *php_random_randomizer_from_obj(zend_object *object) {
+	return (php_random_randomizer *)((char *)(object) - XtOffsetOf(php_random_randomizer, std));
 }
 
 # define Z_RANDOM_ENGINE_P(zval) php_random_engine_from_obj(Z_OBJ_P(zval))
 
-# define Z_RANDOM_RANDOMIZER_P(zval) php_random_randomizer_from_obj(Z_OBJ_P(zval))
+# define Z_RANDOM_RANDOMIZER_P(zval) php_random_randomizer_from_obj(Z_OBJ_P(zval));
+/* ---- CLASS ENTRIES END ---- */
+
+/* ---- API: COMMON BEGIN ---- */
+PHPAPI void *php_random_allocate_status_state(const php_random_algo *algo);
+PHPAPI php_random_status *php_random_allocate_status(const php_random_algo *algo);
+PHPAPI php_random_status *php_random_clone_status(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status);
+PHPAPI void php_random_free_status_state(php_random_status *status);
+PHPAPI void php_random_free_status(php_random_status *status);
+
+PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, zend_object_handlers *handlers, const php_random_algo *algo);
+PHPAPI void php_random_engine_common_free_object(zend_object *object);
+PHPAPI zend_object *php_random_engine_common_clone_object(zend_object *object);
+
+PHPAPI const php_random_algo *php_random_default_algo(void);
+PHPAPI php_random_status *php_random_default_status(void);
+/* ---- API: COMMON END ---- */
+
+/* ---- API: PCG64 BEGIN ---- */
+PHPAPI void php_random_pcg64s_advance(php_random_status_state_pcg64s *state, uint64_t advance);
+/* ---- API: PCG64 END ---- */
+
+/* ---- MODULE ENTRY BEGIN ---- */
+extern zend_module_entry random_module_entry;
+# define phpext_random_ptr &random_module_entry
 
 PHP_MINIT_FUNCTION(random);
 PHP_MSHUTDOWN_FUNCTION(random);
 PHP_RINIT_FUNCTION(random);
+PHP_RSHUTDOWN_FUNCTION(random);
 
 ZEND_BEGIN_MODULE_GLOBALS(random)
-	php_random_engine_state_combinedlcg clcg;		/* Combined LCG global state */
-	php_random_engine_state_mersennetwister mt;		/* MersenneTwister global state */
-	int random_fd;									/* random file discriptor */
+	php_random_status *combined_lcg;
+	php_random_status *mersennetwister;
+	int random_fd;
 ZEND_END_MODULE_GLOBALS(random)
 
 # define RANDOM_G(v)	ZEND_MODULE_GLOBALS_ACCESSOR(random, v)
+
+/* ---- MODULE ENTRY END ---- */
 
 #endif	/* PHP_RANDOM_H */
