@@ -297,7 +297,7 @@ static inline php_random_randomizer *php_random_randomizer_from_obj(zend_object 
 /* ---- API: COMMON BEGIN ---- */
 PHPAPI void *php_random_allocate_status_state(const php_random_algo *algo);
 PHPAPI php_random_status *php_random_allocate_status(const php_random_algo *algo);
-PHPAPI php_random_status *php_random_clone_status(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status);
+PHPAPI php_random_status *php_random_copy_status(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status);
 PHPAPI void php_random_free_status_state(php_random_status *status);
 PHPAPI void php_random_free_status(php_random_status *status);
 

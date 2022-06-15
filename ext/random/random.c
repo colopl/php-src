@@ -177,7 +177,7 @@ static inline uint32_t rand_range32(const php_random_algo *algo, php_random_stat
 	umax++;
 
 	/* Powers of two are not biased */
-	if ((umax & (umax -1)) == 0) {
+	if ((umax & (umax - 1)) == 0) {
 		return result & (umax - 1);
 	}
 
@@ -239,7 +239,7 @@ static inline uint64_t rand_range64(const php_random_algo *algo, php_random_stat
 	umax++;
 
 	/* Powers of two are not biased */
-	if ((umax & (umax -1)) == 0) {
+	if ((umax & (umax - 1)) == 0) {
 		return result & (umax - 1);
 	}
 
@@ -302,7 +302,7 @@ static zend_object *engine_common_clone_obj(zend_object *obj)
 
 	new_engine->algo = old_engine->algo;
 	if (old_engine->status) {
-		new_engine->status = php_random_clone_status(old_engine->algo, old_engine->status, new_engine->status);
+		new_engine->status = php_random_copy_status(old_engine->algo, old_engine->status, new_engine->status);
 	}
 
 	zend_objects_clone_members(&new_engine->std, &old_engine->std);
@@ -323,7 +323,7 @@ PHPAPI php_random_status *php_random_allocate_status(const php_random_algo *algo
 	return status;
 }
 
-PHPAPI php_random_status *php_random_clone_status(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status)
+PHPAPI php_random_status *php_random_copy_status(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status)
 {
 	new_status->last_dynamic_generated_size = old_status->last_dynamic_generated_size;
 	new_status->last_unsafe = old_status->last_unsafe;
