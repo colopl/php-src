@@ -289,7 +289,7 @@ static void engine_common_free_obj(zend_object *obj)
 	php_random_engine *engine = php_random_engine_from_obj(obj);
 
 	if (engine->status) {
-		php_random_free_status(engine->status);
+		php_random_status_free(engine->status);
 	}
 
 	zend_object_std_dtor(obj);
@@ -302,7 +302,7 @@ static zend_object *engine_common_clone_obj(zend_object *obj)
 
 	new_engine->algo = old_engine->algo;
 	if (old_engine->status) {
-		new_engine->status = php_random_copy_status(old_engine->algo, old_engine->status, new_engine->status);
+		new_engine->status = php_random_status_copy(old_engine->algo, old_engine->status, new_engine->status);
 	}
 
 	zend_objects_clone_members(&new_engine->std, &old_engine->std);
@@ -312,7 +312,7 @@ static zend_object *engine_common_clone_obj(zend_object *obj)
 /* ---- COMMON END ---- */
 
 /* ---- COMMON API BEGIN ---- */
-PHPAPI php_random_status *php_random_allocate_status(const php_random_algo *algo)
+PHPAPI php_random_status *php_random_status_allocate(const php_random_algo *algo)
 {
 	php_random_status *status = ecalloc(1, sizeof(php_random_status));
 
@@ -323,7 +323,7 @@ PHPAPI php_random_status *php_random_allocate_status(const php_random_algo *algo
 	return status;
 }
 
-PHPAPI php_random_status *php_random_copy_status(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status)
+PHPAPI php_random_status *php_random_status_copy(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status)
 {
 	new_status->last_dynamic_generated_size = old_status->last_dynamic_generated_size;
 	new_status->last_unsafe = old_status->last_unsafe;
@@ -332,7 +332,7 @@ PHPAPI php_random_status *php_random_copy_status(const php_random_algo *algo, ph
 	return new_status;
 }
 
-PHPAPI void php_random_free_status(php_random_status *status)
+PHPAPI void php_random_status_free(php_random_status *status)
 {
 	if (status->state) {
 		efree(status->state);
@@ -348,7 +348,7 @@ PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, ze
 	object_properties_init(&engine->std, ce);
 
 	engine->algo = algo;
-	engine->status = php_random_allocate_status(engine->algo);
+	engine->status = php_random_status_allocate(engine->algo);
 	engine->std.handlers = handlers;
 
 	return engine;
@@ -845,7 +845,7 @@ static void randomizer_free_obj(zend_object *object) {
 	php_random_randomizer *randomizer = php_random_randomizer_from_obj(object);
 
 	if (randomizer->is_userland_algo && randomizer->status) {
-		php_random_free_status(randomizer->status);
+		php_random_status_free(randomizer->status);
 	}
 
 	zend_object_std_dtor(&randomizer->std);
@@ -861,7 +861,7 @@ static void randomizer_common_init(php_random_randomizer *randomizer, zend_objec
 		randomizer->status = engine->status;
 	} else {
 		/* Self allocation */
-		randomizer->status = php_random_allocate_status(&php_random_algo_user);
+		randomizer->status = php_random_status_allocate(&php_random_algo_user);
 		php_random_status_state_user *state = randomizer->status->state;
 		zend_string *mname;
 		zend_function *generate_method;
@@ -897,7 +897,7 @@ PHPAPI php_random_status *php_random_default_status(void)
 	php_random_status *status = RANDOM_G(mersennetwister);
 
 	if (!status) {
-		status = php_random_allocate_status(&php_random_algo_mersennetwister);
+		status = php_random_status_allocate(&php_random_algo_mersennetwister);
 		mersennetwister_seed_default(status);
 		RANDOM_G(mersennetwister) = status;
 	}
@@ -912,7 +912,7 @@ PHPAPI double php_combined_lcg(void)
 	php_random_status *status = RANDOM_G(combined_lcg);
 
 	if (!status) {
-		status = php_random_allocate_status(&php_random_algo_combinedlcg);
+		status = php_random_status_allocate(&php_random_algo_combinedlcg);
 		combinedlcg_seed_default(status);
 		RANDOM_G(combined_lcg) = status;
 	}
@@ -1148,7 +1148,7 @@ PHP_FUNCTION(mt_srand)
 	php_random_status_state_mersennetwister *state;
 
 	if (!status) {
-		status = php_random_allocate_status(&php_random_algo_mersennetwister);
+		status = php_random_status_allocate(&php_random_algo_mersennetwister);
 		mersennetwister_seed_default(status);
 		RANDOM_G(mersennetwister) = status;
 	}
@@ -1286,7 +1286,6 @@ PHP_FUNCTION(random_int)
 /* ---- PHP FUNCTION END ---- */
 
 /* ---- PHP METHOD BEGIN ---- */
-
 /* {{{ Random\Engine\CombinedLCG::__construct */
 PHP_METHOD(Random_Engine_CombinedLCG, __construct)
 {
@@ -1805,11 +1804,11 @@ PHP_MSHUTDOWN_FUNCTION(random)
 PHP_RSHUTDOWN_FUNCTION(random)
 {
 	if (RANDOM_G(combined_lcg)) {
-		php_random_free_status(RANDOM_G(combined_lcg));
+		php_random_status_free(RANDOM_G(combined_lcg));
 	}
 
 	if (RANDOM_G(mersennetwister)) {
-		php_random_free_status(RANDOM_G(mersennetwister));
+		php_random_status_free(RANDOM_G(mersennetwister));
 	}
 
 	return SUCCESS;
