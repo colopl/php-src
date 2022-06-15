@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 726cbe18f8d6cd70e4d946c3f59ef8ac473f221c */
+ * Stub hash: 1b0eba8d9d8b5698eea04cca1c0cef068e7b245c */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -219,13 +219,13 @@ static const zend_function_entry class_Random_Randomizer_methods[] = {
 	ZEND_FE_END
 };
 
-static zend_class_entry *register_class_Random_Engine_CombinedLCG(zend_class_entry *class_entry_Random_Engine_Random_SeedableEngine, zend_class_entry *class_entry_Random_Engine_Random_SerializableEngine)
+static zend_class_entry *register_class_Random_Engine_CombinedLCG(zend_class_entry *class_entry_Random_SeedableEngine, zend_class_entry *class_entry_Random_SerializableEngine)
 {
 	zend_class_entry ce, *class_entry;
 
 	INIT_NS_CLASS_ENTRY(ce, "Random\\Engine", "CombinedLCG", class_Random_Engine_CombinedLCG_methods);
 	class_entry = zend_register_internal_class_ex(&ce, NULL);
-	zend_class_implements(class_entry, 2, class_entry_Random_Engine_Random_SeedableEngine, class_entry_Random_Engine_Random_SerializableEngine);
+	zend_class_implements(class_entry, 2, class_entry_Random_SeedableEngine, class_entry_Random_SerializableEngine);
 
 	return class_entry;
 }
