@@ -38,41 +38,41 @@
 #include "ext/spl/spl_exceptions.h"
 #include "Zend/zend_exceptions.h"
 
-static inline void pcg64s_step(php_random_status_state_pcg64s *s) {
+static inline void step(php_random_status_state_pcg64s *s) {
 	s->state = php_random_uint128_add(
 		php_random_uint128_multiply(s->state, php_random_uint128_constant(2549297995355413924ULL,4865540595714422341ULL)),
 		php_random_uint128_constant(6364136223846793005ULL,1442695040888963407ULL)
 	);
 }
 
-static inline void pcg64s_seed_128(php_random_status *status, php_random_uint128_t seed)
+static inline void seed128(php_random_status *status, php_random_uint128_t seed)
 {
 	php_random_status_state_pcg64s *s = status->state;
 	s->state = php_random_uint128_constant(0ULL, 0ULL);
-	pcg64s_step(s);
+	step(s);
 	s->state = php_random_uint128_add(s->state, seed);
-	pcg64s_step(s);
+	step(s);
 }
 
-static void pcg64s_seed(php_random_status *status, uint64_t seed)
+static void seed(php_random_status *status, uint64_t seed)
 {
-	pcg64s_seed_128(status, php_random_uint128_constant(0ULL, seed));
+	seed128(status, php_random_uint128_constant(0ULL, seed));
 }
 
-static uint64_t pcg64s_generate(php_random_status *status)
+static uint64_t generate(php_random_status *status)
 {
 	php_random_status_state_pcg64s *s = status->state;
 
-	pcg64s_step(s);
+	step(s);
 	return php_random_pcg64s_rotr64(s->state);
 }
 
-static zend_long pcg64s_range(php_random_status *status, zend_long min, zend_long max)
+static zend_long range(php_random_status *status, zend_long min, zend_long max)
 {
 	return php_random_range(&php_random_algo_pcg64s, status, min, max);
 }
 
-static bool pcg64s_serialize(php_random_status *status, HashTable *data)
+static bool serialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_pcg64s *s = status->state;
 	uint64_t u;
@@ -89,7 +89,7 @@ static bool pcg64s_serialize(php_random_status *status, HashTable *data)
 	return true;
 }
 
-static bool pcg64s_unserialize(php_random_status *status, HashTable *data)
+static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_pcg64s *s = status->state;
 	uint64_t u[2];
@@ -111,11 +111,11 @@ static bool pcg64s_unserialize(php_random_status *status, HashTable *data)
 const php_random_algo php_random_algo_pcg64s = {
 	sizeof(uint64_t),
 	sizeof(php_random_status_state_pcg64s),
-	pcg64s_seed,
-	pcg64s_generate,
-	pcg64s_range,
-	pcg64s_serialize,
-	pcg64s_unserialize
+	seed,
+	generate,
+	range,
+	serialize,
+	unserialize
 };
 
 /* {{{ php_random_pcg64s_advance */
@@ -173,7 +173,7 @@ PHP_METHOD(Random_Engine_PCG64, __construct)
 						t[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
 					}
 				}
-				pcg64s_seed_128(engine->status, php_random_uint128_constant(t[0], t[1]));
+				seed128(engine->status, php_random_uint128_constant(t[0], t[1]));
 			} else {
 				zend_argument_value_error(1, "state strings must be 16 bytes");
 				RETURN_THROWS();

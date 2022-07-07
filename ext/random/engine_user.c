@@ -35,7 +35,7 @@
 #include "php.h"
 #include "php_random.h"
 
-static uint64_t user_generate(php_random_status *status)
+static uint64_t generate(php_random_status *status)
 {
 	php_random_status_state_user *s = status->state;
 	uint64_t result = 0;
@@ -69,7 +69,7 @@ static uint64_t user_generate(php_random_status *status)
 	return result;
 }
 
-static zend_long user_range(php_random_status *status, zend_long min, zend_long max)
+static zend_long range(php_random_status *status, zend_long min, zend_long max)
 {
 	return php_random_range(&php_random_algo_user, status, min, max);
 }
@@ -78,8 +78,8 @@ const php_random_algo php_random_algo_user = {
 	0,
 	sizeof(php_random_status_state_user),
 	NULL,
-	user_generate,
-	user_range,
+	generate,
+	range,
 	NULL,
 	NULL,
 };

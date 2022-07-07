@@ -87,12 +87,12 @@ static inline void mersennetwister_seed_state(php_random_status_state_mersennetw
 	mersennetwister_reload(state);
 }
 
-static void mersennetwister_seed(php_random_status *status, uint64_t seed)
+static void seed(php_random_status *status, uint64_t seed)
 {
     mersennetwister_seed_state(status->state, seed);
 }
 
-static uint64_t mersennetwister_generate(php_random_status *status)
+static uint64_t generate(php_random_status *status)
 {
 	php_random_status_state_mersennetwister *s = status->state;
 	uint32_t s1;
@@ -109,7 +109,7 @@ static uint64_t mersennetwister_generate(php_random_status *status)
 	return (uint64_t) (s1 ^ (s1 >> 18));
 }
 
-static zend_long mersennetwister_range(php_random_status *status, zend_long min, zend_long max)
+static zend_long range(php_random_status *status, zend_long min, zend_long max)
 {
 	php_random_status_state_mersennetwister *s = status->state;
 
@@ -124,7 +124,7 @@ static zend_long mersennetwister_range(php_random_status *status, zend_long min,
 	return (zend_long) r;
 }
 
-static bool mersennetwister_serialize(php_random_status *status, HashTable *data)
+static bool serialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_mersennetwister *s = status->state;
 	zval tmp;
@@ -142,7 +142,7 @@ static bool mersennetwister_serialize(php_random_status *status, HashTable *data
 	return true;
 }
 
-static bool mersennetwister_unserialize(php_random_status *status, HashTable *data)
+static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_mersennetwister *s = status->state;
 	zval *tmp;
@@ -173,11 +173,11 @@ static bool mersennetwister_unserialize(php_random_status *status, HashTable *da
 const php_random_algo php_random_algo_mersennetwister = {
 	sizeof(uint32_t),
 	sizeof(php_random_status_state_mersennetwister),
-	mersennetwister_seed,
-	mersennetwister_generate,
-	mersennetwister_range,
-	mersennetwister_serialize,
-	mersennetwister_unserialize
+	seed,
+	generate,
+	range,
+	serialize,
+	unserialize
 };
 
 /* {{{ php_random_mersennetwister_seed_default */

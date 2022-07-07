@@ -46,7 +46,7 @@
  */
 #define MODMULT(a, b, c, m, s) q = s/a;s=b*(s-a*q)-c*q;if(s<0)s+=m
 
-static void combinedlcg_seed(php_random_status *status, uint64_t seed)
+static void seed(php_random_status *status, uint64_t seed)
 {
 	php_random_status_state_combinedlcg *s = status->state;
 
@@ -54,7 +54,7 @@ static void combinedlcg_seed(php_random_status *status, uint64_t seed)
 	s->state[1] = seed >> 32;
 }
 
-static uint64_t combinedlcg_generate(php_random_status *status)
+static uint64_t generate(php_random_status *status)
 {
 	php_random_status_state_combinedlcg *s = status->state;
 	int32_t q, z;
@@ -70,12 +70,12 @@ static uint64_t combinedlcg_generate(php_random_status *status)
 	return (uint64_t) z;
 }
 
-static zend_long combinedlcg_range(php_random_status *status, zend_long min, zend_long max)
+static zend_long range(php_random_status *status, zend_long min, zend_long max)
 {
 	return php_random_range(&php_random_algo_combinedlcg, status, min, max);
 }
 
-static bool combinedlcg_serialize(php_random_status *status, HashTable *data)
+static bool serialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_combinedlcg *s = status->state;
 	zval t;
@@ -89,7 +89,7 @@ static bool combinedlcg_serialize(php_random_status *status, HashTable *data)
 	return true;
 }
 
-static bool combinedlcg_unserialize(php_random_status *status, HashTable *data)
+static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_combinedlcg *s = status->state;
 	zval *t;
@@ -109,11 +109,11 @@ static bool combinedlcg_unserialize(php_random_status *status, HashTable *data)
 const php_random_algo php_random_algo_combinedlcg = {
 	sizeof(uint32_t),
 	sizeof(php_random_status_state_combinedlcg),
-	combinedlcg_seed,
-	combinedlcg_generate,
-	combinedlcg_range,
-	combinedlcg_serialize,
-	combinedlcg_unserialize
+	seed,
+	generate,
+	range,
+	serialize,
+	unserialize
 };
 
 /* {{{ php_random_combinedlcg_seed_default */

@@ -38,7 +38,7 @@
 #include "ext/spl/spl_exceptions.h"
 #include "Zend/zend_exceptions.h"
 
-static uint64_t secure_generate(php_random_status *status)
+static uint64_t generate(php_random_status *status)
 {
 	zend_ulong r = 0;
 
@@ -49,7 +49,7 @@ static uint64_t secure_generate(php_random_status *status)
 	return r;
 }
 
-static zend_long secure_range(php_random_status *status, zend_long min, zend_long max)
+static zend_long range(php_random_status *status, zend_long min, zend_long max)
 {
 	zend_long result;
 
@@ -64,8 +64,8 @@ const php_random_algo php_random_algo_secure = {
 	sizeof(zend_ulong),
 	0,
 	NULL,
-	secure_generate,
-	secure_range,
+	generate,
+	range,
 	NULL,
 	NULL
 };
