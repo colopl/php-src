@@ -219,6 +219,10 @@ typedef struct _php_random_status_state_pcgoneseq128xslrr64 {
 	php_random_uint128_t state;
 } php_random_status_state_pcgoneseq128xslrr64;
 
+typedef struct _php_random_status_state_xoshiro256starstar {
+	uint64_t state[4];
+} php_random_status_state_xoshiro256starstar;
+
 typedef struct _php_random_status_state_user {
 	zend_object *object;
 	zend_function *generate_method;
@@ -237,6 +241,7 @@ typedef struct _php_random_algo {
 extern PHPAPI const php_random_algo php_random_algo_combinedlcg;
 extern PHPAPI const php_random_algo php_random_algo_mt19937;
 extern PHPAPI const php_random_algo php_random_algo_pcgoneseq128xslrr64;
+extern PHPAPI const php_random_algo php_random_algo_xoshiro256starstar;
 extern PHPAPI const php_random_algo php_random_algo_secure;
 extern PHPAPI const php_random_algo php_random_algo_user;
 
@@ -260,6 +265,7 @@ extern PHPAPI zend_class_entry *random_ce_Random_CryptoSafeEngine;
 
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_PcgOneseq128XslRr64;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Mt19937;
+extern PHPAPI zend_class_entry *random_ce_Random_Engine_Xoshiro256StarStar;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
 extern PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
@@ -290,6 +296,9 @@ PHPAPI void php_random_combinedlcg_seed_default(php_random_status_state_combined
 PHPAPI void php_random_mt19937_seed_default(php_random_status_state_mt19937 *state);
 
 PHPAPI void php_random_pcgoneseq128xslrr64_advance(php_random_status_state_pcgoneseq128xslrr64 *state, uint64_t advance);
+
+PHPAPI void php_random_xoshiro256starstar_jump(php_random_status_state_xoshiro256starstar *state);
+PHPAPI void php_random_xoshiro256starstar_jump_long(php_random_status_state_xoshiro256starstar *state);
 
 extern zend_module_entry random_module_entry;
 # define phpext_random_ptr &random_module_entry

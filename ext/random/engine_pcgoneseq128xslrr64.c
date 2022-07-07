@@ -149,7 +149,7 @@ PHP_METHOD(Random_Engine_PcgOneseq128XslRr64, __construct)
 	zend_string *str_seed = NULL;
 	zend_long int_seed = 0;
 	bool seed_is_null = true;
-	int i, j;
+	uint32_t i, j;
 	uint64_t t[2];
 
 	ZEND_PARSE_PARAMETERS_START(0, 1)
@@ -164,7 +164,7 @@ PHP_METHOD(Random_Engine_PcgOneseq128XslRr64, __construct)
 		}
 	} else {
 		if (str_seed) {
-			/* char (8 bit) * 16 = 128 bits */
+			/* char (byte: 8 bit) * 16 = 128 bits */
 			if (ZSTR_LEN(str_seed) == 16) {
 				/* Endianness safe copy */
 				for (i = 0; i < 2; i++) {

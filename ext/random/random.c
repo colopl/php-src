@@ -133,11 +133,13 @@ PHPAPI zend_class_entry *random_ce_Random_CryptoSafeEngine;
 
 PHPAPI zend_class_entry *random_ce_Random_Engine_Mt19937;
 PHPAPI zend_class_entry *random_ce_Random_Engine_PcgOneseq128XslRr64;
+PHPAPI zend_class_entry *random_ce_Random_Engine_Xoshiro256StarStar;
 PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
 PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
 static zend_object_handlers random_engine_mt19937_object_handlers;
 static zend_object_handlers random_engine_pcgoneseq128xslrr64_object_handlers;
+static zend_object_handlers random_engine_xoshiro256starstar_object_handlers;
 static zend_object_handlers random_engine_secure_object_handlers;
 static zend_object_handlers random_randomizer_object_handlers;
 
@@ -273,6 +275,11 @@ static zend_object *php_random_engine_mt19937_new(zend_class_entry *ce)
 static zend_object *php_random_engine_pcgoneseq128xslrr64_new(zend_class_entry *ce)
 {
 	return &php_random_engine_common_init(ce, &random_engine_pcgoneseq128xslrr64_object_handlers, &php_random_algo_pcgoneseq128xslrr64)->std;
+}
+
+static zend_object *php_random_engine_xoshiro256starstar_new(zend_class_entry *ce)
+{
+	return &php_random_engine_common_init(ce, &random_engine_xoshiro256starstar_object_handlers, &php_random_algo_xoshiro256starstar)->std;
 }
 
 static zend_object *php_random_engine_secure_new(zend_class_entry *ce)
@@ -781,6 +788,14 @@ PHP_MINIT_FUNCTION(random)
 	/* Random\CryptoSafeEngine */
 	random_ce_Random_CryptoSafeEngine = register_class_Random_CryptoSafeEngine(random_ce_Random_Engine);
 
+	/* Random\Engine\Mt19937 */
+	random_ce_Random_Engine_Mt19937 = register_class_Random_Engine_Mt19937(random_ce_Random_Engine);
+	random_ce_Random_Engine_Mt19937->create_object = php_random_engine_mt19937_new;
+	memcpy(&random_engine_mt19937_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	random_engine_mt19937_object_handlers.offset = XtOffsetOf(php_random_engine, std);
+	random_engine_mt19937_object_handlers.free_obj = php_random_engine_common_free_object;
+	random_engine_mt19937_object_handlers.clone_obj = php_random_engine_common_clone_object;
+
 	/* Random\Engine\PcgOnseq128XslRr64 */
 	random_ce_Random_Engine_PcgOneseq128XslRr64 = register_class_Random_Engine_PcgOneseq128XslRr64(random_ce_Random_Engine);
 	random_ce_Random_Engine_PcgOneseq128XslRr64->create_object = php_random_engine_pcgoneseq128xslrr64_new;
@@ -789,13 +804,13 @@ PHP_MINIT_FUNCTION(random)
 	random_engine_pcgoneseq128xslrr64_object_handlers.free_obj = php_random_engine_common_free_object;
 	random_engine_pcgoneseq128xslrr64_object_handlers.clone_obj = php_random_engine_common_clone_object;
 
-	/* Random\Engine\Mt19937 */
-	random_ce_Random_Engine_Mt19937 = register_class_Random_Engine_Mt19937(random_ce_Random_Engine);
-	random_ce_Random_Engine_Mt19937->create_object = php_random_engine_mt19937_new;
-	memcpy(&random_engine_mt19937_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	random_engine_mt19937_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_mt19937_object_handlers.free_obj = php_random_engine_common_free_object;
-	random_engine_mt19937_object_handlers.clone_obj = php_random_engine_common_clone_object;
+	/* Random\Engine\Xoshiro256StarStar */
+	random_ce_Random_Engine_Xoshiro256StarStar = register_class_Random_Engine_Xoshiro256StarStar(random_ce_Random_Engine);
+	random_ce_Random_Engine_Xoshiro256StarStar->create_object = php_random_engine_xoshiro256starstar_new;
+	memcpy(&random_engine_xoshiro256starstar_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	random_engine_xoshiro256starstar_object_handlers.offset = XtOffsetOf(php_random_engine, std);
+	random_engine_xoshiro256starstar_object_handlers.free_obj = php_random_engine_common_free_object;
+	random_engine_xoshiro256starstar_object_handlers.clone_obj = php_random_engine_common_clone_object;
 
 	/* Random\Engine\Secure */
 	random_ce_Random_Engine_Secure = register_class_Random_Engine_Secure(random_ce_Random_CryptoSafeEngine);

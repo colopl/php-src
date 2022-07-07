@@ -7,6 +7,7 @@ $engines = [];
 $engines[] = new Random\Engine\Mt19937(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
 $engines[] = new Random\Engine\Mt19937(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
 $engines[] = new Random\Engine\PcgOneseq128XslRr64(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
+$engines[] = new Random\Engine\Xoshiro256StarStar(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new Random\Engine\Secure(); 
 $engines[] = new class () implements Random\Engine {
     public function generate(): string
