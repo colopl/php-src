@@ -27,7 +27,7 @@ namespace {
 
 namespace Random\Engine
 {
-    class MersenneTwister implements \Random\SeedableEngine, \Random\SerializableEngine
+    class MersenneTwister implements \Random\SerializableEngine
     {
         public function __construct(int|null $seed = null, int $mode = MT_RAND_MT19937) {}
 
@@ -40,7 +40,7 @@ namespace Random\Engine
         public function __debugInfo(): array {}
     }
 
-    class PCG64 implements \Random\SeedableEngine, \Random\SerializableEngine
+    class PCG64 implements \Random\SerializableEngine
     {
         public function __construct(string|int|null $seed = null, string|int $seequence = 0) {}
 
@@ -75,10 +75,6 @@ namespace Random
     }
 
     interface CryptoSafeEngine extends Engine
-    {
-    }
-
-    interface SeedableEngine extends Engine
     {
     }
 

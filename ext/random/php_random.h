@@ -257,7 +257,6 @@ typedef struct _php_random_randomizer {
 
 extern PHPAPI zend_class_entry *random_ce_Random_Engine;
 extern PHPAPI zend_class_entry *random_ce_Random_CryptoSafeEngine;
-extern PHPAPI zend_class_entry *random_ce_Random_SeedableEngine;
 extern PHPAPI zend_class_entry *random_ce_Random_SerializableEngine;
 
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_PCG64;
