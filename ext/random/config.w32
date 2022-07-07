@@ -1,4 +1,4 @@
-EXTENSION('random', 'random.c random_combinedlcg.c random_mersennetwister.c random_pcg64s.c random_secure.c', false /* never shared */, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
+EXTENSION('random', 'random.c random_combinedlcg.c random_mersennetwister.c random_pcg64s.c random_secure.c random_user.c', false /* never shared */, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
 PHP_RANDOM="yes";
 PHP_INSTALL_HEADERS("ext/random", "php_random.h");
 ADD_MAKEFILE_FRAGMENT();
