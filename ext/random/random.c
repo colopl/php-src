@@ -130,7 +130,6 @@ ZEND_DECLARE_MODULE_GLOBALS(random)
 
 PHPAPI zend_class_entry *random_ce_Random_Engine;
 PHPAPI zend_class_entry *random_ce_Random_CryptoSafeEngine;
-PHPAPI zend_class_entry *random_ce_Random_SerializableEngine;
 
 PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
 PHPAPI zend_class_entry *random_ce_Random_Engine_PCG64;
@@ -782,11 +781,8 @@ PHP_MINIT_FUNCTION(random)
 	/* Random\CryptoSafeEngine */
 	random_ce_Random_CryptoSafeEngine = register_class_Random_CryptoSafeEngine(random_ce_Random_Engine);
 
-	/* Random\SerializableEngine */
-	random_ce_Random_SerializableEngine = register_class_Random_SerializableEngine(random_ce_Random_Engine);
-
 	/* Random\Engine\PCG64 */
-	random_ce_Random_Engine_PCG64 = register_class_Random_Engine_PCG64(random_ce_Random_SerializableEngine);
+	random_ce_Random_Engine_PCG64 = register_class_Random_Engine_PCG64(random_ce_Random_Engine);
 	random_ce_Random_Engine_PCG64->create_object = php_random_engine_pcg64_new;
 	memcpy(&random_engine_pcg64_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	random_engine_pcg64_object_handlers.offset = XtOffsetOf(php_random_engine, std);
@@ -794,7 +790,7 @@ PHP_MINIT_FUNCTION(random)
 	random_engine_pcg64_object_handlers.clone_obj = php_random_engine_common_clone_object;
 
 	/* Random\Engine\MersenneTwister */
-	random_ce_Random_Engine_MersenneTwister = register_class_Random_Engine_MersenneTwister(random_ce_Random_SerializableEngine);
+	random_ce_Random_Engine_MersenneTwister = register_class_Random_Engine_MersenneTwister(random_ce_Random_Engine);
 	random_ce_Random_Engine_MersenneTwister->create_object = php_random_engine_mersennetwister_new;
 	memcpy(&random_engine_mersennetwister_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	random_engine_mersennetwister_object_handlers.offset = XtOffsetOf(php_random_engine, std);

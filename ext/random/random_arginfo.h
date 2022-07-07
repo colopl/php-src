@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 377390b6a80881e28725cfaa59ef335c8d1537c3 */
+ * Stub hash: bd6234a1c893e747c37488305c60d2c44755eab6 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -69,12 +69,6 @@ ZEND_END_ARG_INFO()
 #define arginfo_class_Random_Engine_Secure_generate arginfo_class_Random_Engine_MersenneTwister_generate
 
 #define arginfo_class_Random_Engine_generate arginfo_class_Random_Engine_MersenneTwister_generate
-
-#define arginfo_class_Random_SerializableEngine___serialize arginfo_class_Random_Engine_MersenneTwister___serialize
-
-#define arginfo_class_Random_SerializableEngine___unserialize arginfo_class_Random_Engine_MersenneTwister___unserialize
-
-#define arginfo_class_Random_SerializableEngine___debugInfo arginfo_class_Random_Engine_MersenneTwister___serialize
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Randomizer___construct, 0, 0, 0)
 	ZEND_ARG_OBJ_INFO_WITH_DEFAULT_VALUE(0, engine, Random\\Engine, 1, "null")
@@ -172,14 +166,6 @@ static const zend_function_entry class_Random_CryptoSafeEngine_methods[] = {
 };
 
 
-static const zend_function_entry class_Random_SerializableEngine_methods[] = {
-	ZEND_ABSTRACT_ME_WITH_FLAGS(Random_SerializableEngine, __serialize, arginfo_class_Random_SerializableEngine___serialize, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT)
-	ZEND_ABSTRACT_ME_WITH_FLAGS(Random_SerializableEngine, __unserialize, arginfo_class_Random_SerializableEngine___unserialize, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT)
-	ZEND_ABSTRACT_ME_WITH_FLAGS(Random_SerializableEngine, __debugInfo, arginfo_class_Random_SerializableEngine___debugInfo, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT)
-	ZEND_FE_END
-};
-
-
 static const zend_function_entry class_Random_Randomizer_methods[] = {
 	ZEND_ME(Random_Randomizer, __construct, arginfo_class_Random_Randomizer___construct, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, getInt, arginfo_class_Random_Randomizer_getInt, ZEND_ACC_PUBLIC)
@@ -191,24 +177,24 @@ static const zend_function_entry class_Random_Randomizer_methods[] = {
 	ZEND_FE_END
 };
 
-static zend_class_entry *register_class_Random_Engine_MersenneTwister(zend_class_entry *class_entry_Random_SerializableEngine)
+static zend_class_entry *register_class_Random_Engine_MersenneTwister(zend_class_entry *class_entry_Random_Engine)
 {
 	zend_class_entry ce, *class_entry;
 
 	INIT_NS_CLASS_ENTRY(ce, "Random\\Engine", "MersenneTwister", class_Random_Engine_MersenneTwister_methods);
 	class_entry = zend_register_internal_class_ex(&ce, NULL);
-	zend_class_implements(class_entry, 1, class_entry_Random_SerializableEngine);
+	zend_class_implements(class_entry, 1, class_entry_Random_Engine);
 
 	return class_entry;
 }
 
-static zend_class_entry *register_class_Random_Engine_PCG64(zend_class_entry *class_entry_Random_SerializableEngine)
+static zend_class_entry *register_class_Random_Engine_PCG64(zend_class_entry *class_entry_Random_Engine)
 {
 	zend_class_entry ce, *class_entry;
 
 	INIT_NS_CLASS_ENTRY(ce, "Random\\Engine", "PCG64", class_Random_Engine_PCG64_methods);
 	class_entry = zend_register_internal_class_ex(&ce, NULL);
-	zend_class_implements(class_entry, 1, class_entry_Random_SerializableEngine);
+	zend_class_implements(class_entry, 1, class_entry_Random_Engine);
 
 	return class_entry;
 }
@@ -240,17 +226,6 @@ static zend_class_entry *register_class_Random_CryptoSafeEngine(zend_class_entry
 	zend_class_entry ce, *class_entry;
 
 	INIT_NS_CLASS_ENTRY(ce, "Random", "CryptoSafeEngine", class_Random_CryptoSafeEngine_methods);
-	class_entry = zend_register_internal_interface(&ce);
-	zend_class_implements(class_entry, 1, class_entry_Random_Engine);
-
-	return class_entry;
-}
-
-static zend_class_entry *register_class_Random_SerializableEngine(zend_class_entry *class_entry_Random_Engine)
-{
-	zend_class_entry ce, *class_entry;
-
-	INIT_NS_CLASS_ENTRY(ce, "Random", "SerializableEngine", class_Random_SerializableEngine_methods);
 	class_entry = zend_register_internal_interface(&ce);
 	zend_class_implements(class_entry, 1, class_entry_Random_Engine);
 
