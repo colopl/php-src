@@ -32,7 +32,7 @@ try {
 }
 
 try {
-    $randomizer->shuffleString('foobar');
+    $randomizer->shuffleBytes('foobar');
 } catch (\RuntimeException $e) {
     echo "{$e->getMessage()}\n";
 }
@@ -66,7 +66,7 @@ try {
 }
 
 try {
-    $randomizer->shuffleString('foobar');
+    $randomizer->shuffleBytes('foobar');
 } catch (\RuntimeException $e) {
     echo "{$e->getMessage()}\n";
 }

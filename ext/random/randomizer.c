@@ -205,21 +205,21 @@ PHP_METHOD(Random_Randomizer, shuffleArray)
 }
 /* }}} */
 
-/* {{{ Shuffling string */
-PHP_METHOD(Random_Randomizer, shuffleString)
+/* {{{ Shuffling binary */
+PHP_METHOD(Random_Randomizer, shuffleBytes)
 {
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
-	zend_string *string;
+	zend_string *bytes;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_STR(string)
+		Z_PARAM_STR(bytes)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (ZSTR_LEN(string) < 2) {
-		RETURN_STR_COPY(string);
+	if (ZSTR_LEN(bytes) < 2) {
+		RETURN_STR_COPY(bytes);
 	}
 
-	RETVAL_STRINGL(ZSTR_VAL(string), ZSTR_LEN(string));
+	RETVAL_STRINGL(ZSTR_VAL(bytes), ZSTR_LEN(bytes));
 	if (php_string_shuffle(randomizer->algo, randomizer->status, Z_STRVAL_P(return_value), (zend_long) Z_STRLEN_P(return_value)) == FAILURE) {
 		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 		RETURN_THROWS();

@@ -90,7 +90,7 @@ namespace Random
 
         public function shuffleArray(array $array): array {}
 
-        public function shuffleString(string $string): string {}
+        public function shuffleBytes(string $binary): string {}
 
         public function __serialize(): array {}
 

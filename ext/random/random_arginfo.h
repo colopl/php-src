@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 4388366afcaa2bec5224d7aa4fda77b989e634ca */
+ * Stub hash: 1d8470e14a23c3b8f977527f62a5f7cca6156f81 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -82,8 +82,8 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_Randomizer_shuffleA
 	ZEND_ARG_TYPE_INFO(0, array, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_Randomizer_shuffleString, 0, 1, IS_STRING, 0)
-	ZEND_ARG_TYPE_INFO(0, string, IS_STRING, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_Randomizer_shuffleBytes, 0, 1, IS_STRING, 0)
+	ZEND_ARG_TYPE_INFO(0, binary, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_Randomizer___serialize arginfo_class_Random_Engine_MersenneTwister___serialize
@@ -109,7 +109,7 @@ ZEND_METHOD(Random_Randomizer, __construct);
 ZEND_METHOD(Random_Randomizer, getInt);
 ZEND_METHOD(Random_Randomizer, getBytes);
 ZEND_METHOD(Random_Randomizer, shuffleArray);
-ZEND_METHOD(Random_Randomizer, shuffleString);
+ZEND_METHOD(Random_Randomizer, shuffleBytes);
 ZEND_METHOD(Random_Randomizer, __serialize);
 ZEND_METHOD(Random_Randomizer, __unserialize);
 
@@ -171,7 +171,7 @@ static const zend_function_entry class_Random_Randomizer_methods[] = {
 	ZEND_ME(Random_Randomizer, getInt, arginfo_class_Random_Randomizer_getInt, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, getBytes, arginfo_class_Random_Randomizer_getBytes, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, shuffleArray, arginfo_class_Random_Randomizer_shuffleArray, ZEND_ACC_PUBLIC)
-	ZEND_ME(Random_Randomizer, shuffleString, arginfo_class_Random_Randomizer_shuffleString, ZEND_ACC_PUBLIC)
+	ZEND_ME(Random_Randomizer, shuffleBytes, arginfo_class_Random_Randomizer_shuffleBytes, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, __serialize, arginfo_class_Random_Randomizer___serialize, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, __unserialize, arginfo_class_Random_Randomizer___unserialize, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
