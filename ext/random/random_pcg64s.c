@@ -1,0 +1,201 @@
+/*
+   +----------------------------------------------------------------------+
+   | Copyright (c) The PHP Group                                          |
+   +----------------------------------------------------------------------+
+   | This source file is subject to version 3.01 of the PHP license,      |
+   | that is bundled with this package in the file LICENSE, and is        |
+   | available through the world-wide-web at the following url:           |
+   | https://www.php.net/license/3_01.txt                                 |
+   | If you did not receive a copy of the PHP license and are unable to   |
+   | obtain it through the world-wide-web, please send a note to          |
+   | license@php.net so we can mail you a copy immediately.               |
+   +----------------------------------------------------------------------+
+   | Authors: Rasmus Lerdorf <rasmus@php.net>                             |
+   |          Zeev Suraski <zeev@php.net>                                 |
+   |          Sascha Schumann <sascha@schumann.cx>                        |
+   |          Pedro Melo <melo@ip.pt>                                     |
+   |          Sterling Hughes <sterling@php.net>                          |
+   |          Sammy Kaye Powers <me@sammyk.me>                            |
+   |          Go Kudo <g-kudo@colopl.co.jp>                               |
+   |                                                                      |
+   | Based on code from: Richard J. Wagner <rjwagner@writeme.com>         |
+   |                     Makoto Matsumoto <matumoto@math.keio.ac.jp>      |
+   |                     Takuji Nishimura                                 |
+   |                     Shawn Cokus <Cokus@math.washington.edu>          |
+   |                     David Blackman                                   |
+   |                     Sebastiano Vigna <vigna@acm.org>                 |
+   |                     Melissa O'Neill <oneill@pcg-random.org>          |
+   +----------------------------------------------------------------------+
+*/
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#include "php.h"
+#include "php_random.h"
+
+#include "ext/spl/spl_exceptions.h"
+#include "Zend/zend_exceptions.h"
+
+static inline void pcg64s_step(php_random_status_state_pcg64s *s) {
+	s->state = php_random_uint128_add(
+		php_random_uint128_multiply(s->state, php_random_uint128_constant(2549297995355413924ULL,4865540595714422341ULL)),
+		php_random_uint128_constant(6364136223846793005ULL,1442695040888963407ULL)
+	);
+}
+
+static inline void pcg64s_seed_128(php_random_status *status, php_random_uint128_t seed)
+{
+	php_random_status_state_pcg64s *s = status->state;
+	s->state = php_random_uint128_constant(0ULL, 0ULL);
+	pcg64s_step(s);
+	s->state = php_random_uint128_add(s->state, seed);
+	pcg64s_step(s);
+}
+
+static void pcg64s_seed(php_random_status *status, uint64_t seed)
+{
+	pcg64s_seed_128(status, php_random_uint128_constant(0ULL, seed));
+}
+
+static uint64_t pcg64s_generate(php_random_status *status)
+{
+	php_random_status_state_pcg64s *s = status->state;
+
+	pcg64s_step(s);
+	return php_random_pcg64s_rotr64(s->state);
+}
+
+static zend_long pcg64s_range(php_random_status *status, zend_long min, zend_long max)
+{
+	return php_random_range(&php_random_algo_pcg64s, status, min, max);
+}
+
+static bool pcg64s_serialize(php_random_status *status, HashTable *data)
+{
+	php_random_status_state_pcg64s *s = status->state;
+	uint64_t u;
+	zval z;
+
+	u = php_random_uint128_hi(s->state);
+	ZVAL_STR(&z, zend_strpprintf(0, "%" PRIu64, u));
+	zend_hash_next_index_insert(data, &z);
+	
+	u = php_random_uint128_lo(s->state);
+	ZVAL_STR(&z, zend_strpprintf(0, "%" PRIu64, u));
+	zend_hash_next_index_insert(data, &z);
+
+	return true;
+}
+
+static bool pcg64s_unserialize(php_random_status *status, HashTable *data)
+{
+	php_random_status_state_pcg64s *s = status->state;
+	uint64_t u[2];
+	zval *z;
+	uint32_t i;
+
+	for (i = 0; i < 2; i++) {
+		z = zend_hash_index_find(data, i);
+		if (!z || Z_TYPE_P(z) != IS_STRING) {
+			return false;
+		}
+		u[i] = strtoull(ZSTR_VAL(Z_STR_P(z)), NULL, 10);
+	}
+	s->state = php_random_uint128_constant(u[0], u[1]);
+
+	return true;
+}
+
+const php_random_algo php_random_algo_pcg64s = {
+	sizeof(uint64_t),
+	sizeof(php_random_status_state_pcg64s),
+	pcg64s_seed,
+	pcg64s_generate,
+	pcg64s_range,
+	pcg64s_serialize,
+	pcg64s_unserialize
+};
+
+/* {{{ php_random_pcg64s_advance */
+PHPAPI void php_random_pcg64s_advance(php_random_status_state_pcg64s *state, uint64_t advance)
+{
+	php_random_uint128_t
+		cur_mult = php_random_uint128_constant(2549297995355413924ULL,4865540595714422341ULL),
+		cur_plus = php_random_uint128_constant(6364136223846793005ULL,1442695040888963407ULL),
+		acc_mult = php_random_uint128_constant(0ULL, 1ULL),
+		acc_plus = php_random_uint128_constant(0ULL, 0ULL);
+
+	while (advance > 0) {
+		if (advance & 1) {
+			acc_mult = php_random_uint128_multiply(acc_mult, cur_mult);
+			acc_plus = php_random_uint128_add(php_random_uint128_multiply(acc_plus, cur_mult), cur_plus);
+		}
+		cur_plus = php_random_uint128_multiply(php_random_uint128_add(cur_mult, php_random_uint128_constant(0ULL, 1ULL)), cur_plus);
+		cur_mult = php_random_uint128_multiply(cur_mult, cur_mult);
+		advance /= 2;
+	}
+
+	state->state = php_random_uint128_add(php_random_uint128_multiply(acc_mult, state->state), acc_plus);
+}
+/* }}} */
+
+/* {{{ Random\Engine\PCG64::__construct */
+PHP_METHOD(Random_Engine_PCG64, __construct)
+{
+	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	php_random_status_state_pcg64s *state = engine->status->state;
+	zend_string *str_seed = NULL;
+	zend_long int_seed = 0;
+	bool seed_is_null = true;
+	int i, j;
+	uint64_t t[2];
+
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL;
+		Z_PARAM_STR_OR_LONG_OR_NULL(str_seed, int_seed, seed_is_null);
+	ZEND_PARSE_PARAMETERS_END();
+
+	if (seed_is_null) {
+		if (php_random_bytes_silent(&state->state, sizeof(php_random_uint128_t)) == FAILURE) {
+			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+			RETURN_THROWS();
+		}
+	} else {
+		if (str_seed) {
+			/* char (8 bit) * 16 = 128 bits */
+			if (ZSTR_LEN(str_seed) == 16) {
+				/* Endianness safe copy */
+				for (i = 0; i < 2; i++) {
+					t[i] = 0;
+					for (j = 0; j < 8; j++) {
+						t[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
+					}
+				}
+				pcg64s_seed_128(engine->status, php_random_uint128_constant(t[0], t[1]));
+			} else {
+				zend_argument_value_error(1, "state strings must be 16 bytes");
+				RETURN_THROWS();
+			}
+		} else {
+			engine->algo->seed(engine->status, int_seed);
+		}
+	}
+}
+/* }}} */
+
+/* {{{ Random\Engine\PCG64::jump() */
+PHP_METHOD(Random_Engine_PCG64, jump)
+{
+	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	php_random_status_state_pcg64s *state = engine->status->state;
+	zend_long advance = 0;
+
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_LONG(advance);
+	ZEND_PARSE_PARAMETERS_END();
+
+	php_random_pcg64s_advance(state, advance);
+}
+/* }}} */

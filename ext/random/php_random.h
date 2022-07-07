@@ -281,16 +281,15 @@ static inline php_random_randomizer *php_random_randomizer_from_obj(zend_object 
 PHPAPI php_random_status *php_random_status_allocate(const php_random_algo *algo);
 PHPAPI php_random_status *php_random_status_copy(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status);
 PHPAPI void php_random_status_free(php_random_status *status);
-
 PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, zend_object_handlers *handlers, const php_random_algo *algo);
 PHPAPI void php_random_engine_common_free_object(zend_object *object);
 PHPAPI zend_object *php_random_engine_common_clone_object(zend_object *object);
-
 PHPAPI zend_long php_random_range(const php_random_algo *algo, php_random_status *status, zend_long min, zend_long max);
 PHPAPI const php_random_algo *php_random_default_algo(void);
 PHPAPI php_random_status *php_random_default_status(void);
 
 PHPAPI void php_random_combinedlcg_seed_default(php_random_status_state_combinedlcg *state);
+
 PHPAPI void php_random_mersennetwister_seed_default(php_random_status_state_mersennetwister *state);
 
 PHPAPI void php_random_pcg64s_advance(php_random_status_state_pcg64s *state, uint64_t advance);
