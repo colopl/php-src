@@ -4,7 +4,16 @@ Random: Engine: User: compatibility
 <?php
 
 $native_engine = new \Random\Engine\MersenneTwister(1234);
-$user_engine = new class (1234) extends \Random\Engine\MersenneTwister {};
+$user_engine = new class () implements \Random\Engine {
+    public function __construct(private $engine = new \Random\Engine\MersenneTwister(1234))
+    {
+    }
+
+    public function generate(): string
+    {
+        return $this->engine->generate();
+    }
+};
 
 for ($i = 0; $i < 1000; $i++) {
     if ($native_engine->generate() !== $user_engine->generate()) {
@@ -13,7 +22,16 @@ for ($i = 0; $i < 1000; $i++) {
 }
 
 $native_engine = new \Random\Engine\PCG64(1234);
-$user_engine = new class (1234) extends \Random\Engine\PCG64 {};
+$user_engine = new class () implements \Random\Engine {
+    public function __construct(private $engine = new \Random\Engine\PCG64(1234))
+    {
+    }
+
+    public function generate(): string
+    {
+        return $this->engine->generate();
+    }
+};
 
 for ($i = 0; $i < 1000; $i++) {
     if ($native_engine->generate() !== $user_engine->generate()) {

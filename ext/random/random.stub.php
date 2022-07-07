@@ -27,7 +27,7 @@ namespace {
 
 namespace Random\Engine
 {
-    class MersenneTwister implements \Random\Engine
+    final class MersenneTwister implements \Random\Engine
     {
         public function __construct(int|null $seed = null, int $mode = MT_RAND_MT19937) {}
 
@@ -40,7 +40,7 @@ namespace Random\Engine
         public function __debugInfo(): array {}
     }
 
-    class PCG64 implements \Random\Engine
+    final class PCG64 implements \Random\Engine
     {
         public function __construct(string|int|null $seed = null, string|int $seequence = 0) {}
 
@@ -60,7 +60,7 @@ namespace Random\Engine
     }
 
     /** @not-serializable */
-    class Secure implements \Random\CryptoSafeEngine
+    final class Secure implements \Random\CryptoSafeEngine
     {
         /** @implementation-alias Random\Engine\MersenneTwister::generate */
         public function generate(): string {}
