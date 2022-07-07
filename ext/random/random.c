@@ -289,7 +289,6 @@ static zend_object *php_random_engine_secure_new(zend_class_entry *ce)
 	return &php_random_engine_common_init(ce, &random_engine_secure_object_handlers, &php_random_algo_secure)->std;
 }
 
-/* ---- Randomizer BEGIN ---- */
 static zend_object *php_random_randomizer_new(zend_class_entry *ce)
 {
 	php_random_randomizer *randomizer = zend_object_alloc(sizeof(php_random_randomizer), ce);
@@ -312,7 +311,6 @@ static void randomizer_free_obj(zend_object *object) {
 	zend_object_std_dtor(&randomizer->std);
 }
 
-/* ---- COMMON API BEGIN ---- */
 PHPAPI php_random_status *php_random_status_allocate(const php_random_algo *algo)
 {
 	php_random_status *status = ecalloc(1, sizeof(php_random_status));
@@ -629,7 +627,6 @@ PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool 
 }
 /* }}} */
 
-/* ---- PHP FUNCTION BEGIN ---- */
 /* {{{ Returns a value from the combined linear congruential generator */
 PHP_FUNCTION(lcg_value)
 {
@@ -909,7 +906,6 @@ zend_module_entry random_module_entry = {
 	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
-/* ---- PHP MODULE END ---- */
 
 #ifdef COMPILE_DL_RANDOM
 # ifdef ZTS
