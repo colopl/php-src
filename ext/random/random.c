@@ -286,44 +286,10 @@ static zend_object *php_random_engine_pcg64_new(zend_class_entry *ce)
 	return &php_random_engine_common_init(ce, &random_engine_pcg64_object_handlers, &php_random_algo_pcg64s)->std;
 }
 
-/* ---- SECURE BEGIN ---- */
-static uint64_t secure_generate(php_random_status *status)
-{
-	zend_ulong r = 0;
-
-	if (php_random_bytes_silent(&r, sizeof(zend_ulong)) == FAILURE) {
-		status->last_unsafe = true;
-	}
-
-	return r;
-}
-
-static zend_long secure_range(php_random_status *status, zend_long min, zend_long max)
-{
-	zend_long result;
-
-	if (php_random_int_silent(min, max, &result) == FAILURE) {
-		status->last_unsafe = true;
-	}
-
-	return result;
-}
-
-const php_random_algo php_random_algo_secure = {
-	sizeof(zend_ulong),
-	0,
-	NULL,
-	secure_generate,
-	secure_range,
-	NULL,
-	NULL
-};
-
 static zend_object *php_random_engine_secure_new(zend_class_entry *ce)
 {
 	return &php_random_engine_common_init(ce, &random_engine_secure_object_handlers, &php_random_algo_secure)->std;
 }
-/* ---- SECURE END ---- */
 
 /* ---- USER BEGIN ---- */
 static uint64_t user_generate(php_random_status *status)
@@ -904,7 +870,6 @@ PHP_FUNCTION(random_int)
 /* ---- PHP FUNCTION END ---- */
 
 /* ---- PHP METHOD BEGIN ---- */
-
 /* {{{ Random\Randomizer::__construct() */
 PHP_METHOD(Random_Randomizer, __construct)
 {
