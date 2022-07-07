@@ -4,7 +4,6 @@ Random: Randomizer: serialize
 <?php
 
 $engines = [];
-$engines[] = new Random\Engine\CombinedLCG(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
 $engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
 $engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
 $engines[] = new Random\Engine\PCG64(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
@@ -47,7 +46,6 @@ foreach ($engines as $engine) {
 die('success');
 ?>
 --EXPECTF--
-Random\Engine\CombinedLCG: success
 Random\Engine\MersenneTwister: success
 Random\Engine\MersenneTwister: success
 Random\Engine\PCG64: success

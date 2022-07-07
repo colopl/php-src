@@ -24,7 +24,6 @@ final class User32 implements \Random\Engine
 }
 
 $engines = [];
-$engine[] = new \Random\Engine\CombinedLCG(1234);
 $engine[] = new \Random\Engine\MersenneTwister(1234);
 $engine[] = new \Random\Engine\PCG64(1234);
 $engine[] = new \User64();

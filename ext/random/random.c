@@ -133,13 +133,11 @@ PHPAPI zend_class_entry *random_ce_Random_CryptoSafeEngine;
 PHPAPI zend_class_entry *random_ce_Random_SeedableEngine;
 PHPAPI zend_class_entry *random_ce_Random_SerializableEngine;
 
-PHPAPI zend_class_entry *random_ce_Random_Engine_CombinedLCG;
 PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
 PHPAPI zend_class_entry *random_ce_Random_Engine_PCG64;
 PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
 PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
-static zend_object_handlers random_engine_combinedlcg_object_handlers;
 static zend_object_handlers random_engine_mersennetwister_object_handlers;
 static zend_object_handlers random_engine_pcg64_object_handlers;
 static zend_object_handlers random_engine_secure_object_handlers;
@@ -267,11 +265,6 @@ static inline uint64_t rand_range64(const php_random_algo *algo, php_random_stat
 	}
 
 	return result % umax;
-}
-
-static zend_object *php_random_engine_combinedlcg_new(zend_class_entry *ce)
-{
-	return &php_random_engine_common_init(ce, &random_engine_combinedlcg_object_handlers, &php_random_algo_combinedlcg)->std;
 }
 
 static zend_object *php_random_engine_mersennetwister_new(zend_class_entry *ce)
@@ -795,14 +788,6 @@ PHP_MINIT_FUNCTION(random)
 
 	/* Random\SerializableEngine */
 	random_ce_Random_SerializableEngine = register_class_Random_SerializableEngine(random_ce_Random_Engine);
-
-	/* Random\Engine\CombinedLCG */
-	random_ce_Random_Engine_CombinedLCG = register_class_Random_Engine_CombinedLCG(random_ce_Random_SeedableEngine, random_ce_Random_SerializableEngine);
-	random_ce_Random_Engine_CombinedLCG->create_object = php_random_engine_combinedlcg_new;
-	memcpy(&random_engine_combinedlcg_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	random_engine_combinedlcg_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_combinedlcg_object_handlers.free_obj = php_random_engine_common_free_object;
-	random_engine_combinedlcg_object_handlers.clone_obj = php_random_engine_common_clone_object;
 
 	/* Random\Engine\PCG64 */
 	random_ce_Random_Engine_PCG64 = register_class_Random_Engine_PCG64(random_ce_Random_SeedableEngine, random_ce_Random_SerializableEngine);

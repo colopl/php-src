@@ -227,3 +227,114 @@ PHP_METHOD(Random_Engine_MersenneTwister, __construct)
 	engine->algo->seed(engine->status, seed);
 }
 /* }}} */
+
+/* {{{ Random\Engine\MersenneTwister::generate() */
+PHP_METHOD(Random_Engine_MersenneTwister, generate)
+{
+	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	uint64_t generated;
+	size_t size;
+	zend_string *bytes;
+	int i;
+
+	ZEND_PARSE_PARAMETERS_NONE();
+
+	generated = engine->algo->generate(engine->status);
+	size = engine->status->last_generated_size;
+	if (engine->status->last_unsafe) {
+		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+		RETURN_THROWS();
+	}
+
+	bytes = zend_string_alloc(size, false);
+
+	/* Endianness safe copy */
+	for (i = 0; i < size; i++) {
+		ZSTR_VAL(bytes)[i] = (generated >> (i * 8)) & 0xff;
+	}
+	ZSTR_VAL(bytes)[size] = '\0';
+
+	RETURN_STR(bytes);
+}
+/* }}} */
+
+/* {{{ Random\Engine\MersenneTwister::__serialize() */
+PHP_METHOD(Random_Engine_MersenneTwister, __serialize)
+{
+	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	zval t;
+
+	ZEND_PARSE_PARAMETERS_NONE();
+
+	array_init(return_value);
+
+	/* members */
+	ZVAL_ARR(&t, zend_std_get_properties(&engine->std));
+	Z_TRY_ADDREF(t);
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &t);
+
+	/* state */
+	array_init(&t);
+	if (!engine->algo->serialize(engine->status, Z_ARRVAL(t))) {
+		zend_throw_exception(NULL, "Engine serialize failed", 0);
+		RETURN_THROWS();
+	}
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &t);
+}
+/* }}} */
+
+/* {{{ Random\Engine\MersenneTwister::__unserialize() */
+PHP_METHOD(Random_Engine_MersenneTwister, __unserialize)
+{
+	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	HashTable *d;
+	zval *t;
+
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_ARRAY_HT(d);
+	ZEND_PARSE_PARAMETERS_END();
+
+	/* members */
+	t = zend_hash_index_find(d, 0);
+	if (!t || Z_TYPE_P(t) != IS_ARRAY) {
+		zend_throw_exception(NULL, "Incomplete or ill-formed serialization data", 0);
+		RETURN_THROWS();
+	}
+	object_properties_load(&engine->std, Z_ARRVAL_P(t));
+
+	/* state */
+	t = zend_hash_index_find(d, 1);
+	if (!t || Z_TYPE_P(t) != IS_ARRAY) {
+		zend_throw_exception(NULL, "Incomplete or ill-formed serialization data", 0);
+		RETURN_THROWS();
+	}
+	if (!engine->algo->unserialize(engine->status, Z_ARRVAL_P(t))) {
+		zend_throw_exception(NULL, "Engine unserialize failed", 0);
+		RETURN_THROWS();
+	}
+}
+/* }}} */
+
+/* {{{ Random\Engine\MersenneTwister::__debugInfo() */
+PHP_METHOD(Random_Engine_MersenneTwister, __debugInfo)
+{
+	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	zval t;
+
+	ZEND_PARSE_PARAMETERS_NONE();
+
+	if (!engine->std.properties) {
+		rebuild_object_properties(&engine->std);
+	}
+	ZVAL_ARR(return_value, zend_array_dup(engine->std.properties));
+
+	if (engine->algo->serialize) {
+		array_init(&t);
+		if (!engine->algo->serialize(engine->status, Z_ARRVAL(t))) {
+			zend_throw_exception(NULL, "Engine serialize failed", 0);
+			RETURN_THROWS();
+		}
+		zend_hash_str_add(Z_ARR_P(return_value), "__states", sizeof("__states") - 1, &t);
+	}
+}
+/* }}} */
