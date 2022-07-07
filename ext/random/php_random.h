@@ -291,6 +291,7 @@ PHPAPI const php_random_algo *php_random_default_algo(void);
 PHPAPI php_random_status *php_random_default_status(void);
 
 PHPAPI void php_random_combinedlcg_seed_default(php_random_status_state_combinedlcg *state);
+PHPAPI void php_random_mersennetwister_seed_default(php_random_status_state_mersennetwister *state);
 
 PHPAPI void php_random_pcg64s_advance(php_random_status_state_pcg64s *state, uint64_t advance);
 
