@@ -71,7 +71,7 @@ static inline uint64_t generate_state(php_random_status_state_xoshiro256starstar
 static inline void jump(php_random_status_state_xoshiro256starstar *state, const uint64_t *jmp)
 {
 	uint64_t s0 = 0, s1 = 0, s2 = 0, s3 = 0;
-	uint32_t i, j;
+	int i, j;
 
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 64; j++) {
