@@ -71,7 +71,7 @@ static inline uint64_t generate_state(php_random_status_state_xoshiro256starstar
 static inline void jump(php_random_status_state_xoshiro256starstar *state, const uint64_t *jmp)
 {
 	uint64_t s0 = 0, s1 = 0, s2 = 0, s3 = 0;
-	int i, j;
+	uint32_t i, j;
 
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 64; j++) {
@@ -104,7 +104,14 @@ static inline void seed256(php_random_status *status, uint64_t s0, uint64_t s1, 
 
 static void seed(php_random_status *status, uint64_t seed)
 {
-    seed256(status, splitmix64(&seed), splitmix64(&seed), splitmix64(&seed), splitmix64(&seed));
+	uint64_t s[4];
+	
+	s[0] = splitmix64(&seed);
+	s[1] = splitmix64(&seed);
+	s[2] = splitmix64(&seed);
+	s[3] = splitmix64(&seed);
+
+    seed256(status, s[0], s[1], s[2], s[3]);
 }
 
 static uint64_t generate(php_random_status *status)
@@ -235,7 +242,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 				RETURN_THROWS();
 			}
 		} else {
-			engine->algo->seed(engine->status, int_seed);
+			engine->algo->seed(engine->status, (uint64_t) int_seed);
 		}
 	}
 }
