@@ -31,11 +31,8 @@
 #ifndef PHP_RANDOM_H
 # define PHP_RANDOM_H
 
-/* ---- API: COMBINED LCG BEGIN ---- */
 PHPAPI double php_combined_lcg(void);
-/* ---- API: COMBINED LCG END ---- */
 
-/* ---- API: MT BEGIN ---- */
 /*
  * A bit of tricky math here.  We want to avoid using a modulus because
  * that simply tosses the high-order bits and might skew the distribution
@@ -81,9 +78,7 @@ PHPAPI void php_mt_srand(uint32_t seed);
 PHPAPI uint32_t php_mt_rand(void);
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max);
 PHPAPI zend_long php_mt_rand_common(zend_long min, zend_long max);
-/* ---- API: MT END ---- */
 
-/* ---- API: RAND BEGIN ---- */
 # ifndef RAND_MAX
 #  define RAND_MAX PHP_MT_RAND_MAX
 # endif
@@ -92,9 +87,7 @@ PHPAPI zend_long php_mt_rand_common(zend_long min, zend_long max);
 
 PHPAPI void php_srand(zend_long seed);
 PHPAPI zend_long php_rand(void);
-/* ---- API: RAND END ---- */
 
-/* ---- API: UINT128 / PCG64 BEGIN ---- */
 # if !defined(__SIZEOF_INT128__) || defined(PHP_RANDOM_FORCE_EMULATE_128)
 typedef struct _php_random_uint128_t {
 	uint64_t hi;
@@ -197,9 +190,7 @@ static inline uint64_t php_random_pcg64s_rotr64(php_random_uint128_t num)
 	return (v >> s) | (v << ((-s) & 63));
 }
 # endif
-/* ---- API: UINT128 / PCG64 END ---- */
 
-/* ---- API: SECURE BEGIN ---- */
 # define php_random_bytes_throw(b, s) php_random_bytes((b), (s), 1)
 # define php_random_bytes_silent(b, s) php_random_bytes((b), (s), 0)
 # define php_random_int_throw(min, max, result) php_random_int((min), (max), (result), 1)
@@ -207,9 +198,7 @@ static inline uint64_t php_random_pcg64s_rotr64(php_random_uint128_t num)
 
 PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw);
 PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool should_throw);
-/* ---- API: SECURE END ---- */
 
-/* ---- STATE BEGIN ---- */
 typedef struct _php_random_status_ {
 	size_t last_generated_size;
 	bool last_unsafe;
@@ -234,9 +223,7 @@ typedef struct _php_random_status_state_user {
 	zend_object *object;
 	zend_function *generate_method;
 } php_random_status_state_user;
-/* ---- STATE END ---- */
 
-/* ---- ALGORITHM BEGIN ---- */
 typedef struct _php_random_algo {
 	const size_t generate_size;
 	const size_t state_size;
@@ -254,9 +241,7 @@ extern PHPAPI const php_random_algo php_random_algo_secure;
 extern PHPAPI const php_random_algo php_random_algo_user;
 
 # define PHP_RANDOM_ALGO_IS_DYNAMIC(algo)	((algo)->generate_size == 0)
-/* ---- ALGORITHM END ---- */
 
-/* ---- CLASS ENTRIES BEGIN ---- */
 typedef struct _php_random_engine {
 	const php_random_algo *algo;
 	php_random_status *status;
@@ -292,9 +277,7 @@ static inline php_random_randomizer *php_random_randomizer_from_obj(zend_object 
 # define Z_RANDOM_ENGINE_P(zval) php_random_engine_from_obj(Z_OBJ_P(zval))
 
 # define Z_RANDOM_RANDOMIZER_P(zval) php_random_randomizer_from_obj(Z_OBJ_P(zval));
-/* ---- CLASS ENTRIES END ---- */
 
-/* ---- API: COMMON BEGIN ---- */
 PHPAPI php_random_status *php_random_status_allocate(const php_random_algo *algo);
 PHPAPI php_random_status *php_random_status_copy(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status);
 PHPAPI void php_random_status_free(php_random_status *status);
@@ -303,15 +286,14 @@ PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, ze
 PHPAPI void php_random_engine_common_free_object(zend_object *object);
 PHPAPI zend_object *php_random_engine_common_clone_object(zend_object *object);
 
+PHPAPI zend_long php_random_range(const php_random_algo *algo, php_random_status *status, zend_long min, zend_long max);
 PHPAPI const php_random_algo *php_random_default_algo(void);
 PHPAPI php_random_status *php_random_default_status(void);
-/* ---- API: COMMON END ---- */
 
-/* ---- API: PCG64 BEGIN ---- */
+PHPAPI void php_random_combinedlcg_seed_default(php_random_status_state_combinedlcg *state);
+
 PHPAPI void php_random_pcg64s_advance(php_random_status_state_pcg64s *state, uint64_t advance);
-/* ---- API: PCG64 END ---- */
 
-/* ---- MODULE ENTRY BEGIN ---- */
 extern zend_module_entry random_module_entry;
 # define phpext_random_ptr &random_module_entry
 
@@ -327,7 +309,5 @@ ZEND_BEGIN_MODULE_GLOBALS(random)
 ZEND_END_MODULE_GLOBALS(random)
 
 # define RANDOM_G(v)	ZEND_MODULE_GLOBALS_ACCESSOR(random, v)
-
-/* ---- MODULE ENTRY END ---- */
 
 #endif	/* PHP_RANDOM_H */
