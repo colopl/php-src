@@ -3,9 +3,9 @@ Random: Randomizer: Compatibility: user
 --FILE--
 <?php
 
-$native_randomizer = new \Random\Randomizer(new \Random\Engine\MersenneTwister(1234));
+$native_randomizer = new \Random\Randomizer(new \Random\Engine\Mt19937(1234));
 $user_randomizer = new \Random\Randomizer(new class () implements \Random\Engine {
-    public function __construct(private $engine = new \Random\Engine\MersenneTwister(1234))
+    public function __construct(private $engine = new \Random\Engine\Mt19937(1234))
     {
     }
 
@@ -24,9 +24,9 @@ for ($i = 0; $i < 1000; $i++) {
 }
 
 try {
-    $native_randomizer = new \Random\Randomizer(new \Random\Engine\PCG64(1234));
+    $native_randomizer = new \Random\Randomizer(new \Random\Engine\PcgOneseq128XslRr64(1234));
     $user_randomizer = new \Random\Randomizer(new class () implements \Random\Engine {
-    public function __construct(private $engine = new \Random\Engine\PCG64(1234))
+    public function __construct(private $engine = new \Random\Engine\PcgOneseq128XslRr64(1234))
     {
     }
 

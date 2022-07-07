@@ -4,10 +4,10 @@ Random: Randomizer: serialize
 <?php
 
 $engines = [];
-$engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
-$engines[] = new Random\Engine\MersenneTwister(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
-$engines[] = new Random\Engine\PCG64(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
-$engines[] = new Random\Engine\Secure(); 
+$engines[] = new \Random\Engine\Mt19937(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_MT19937);
+$engines[] = new \Random\Engine\Mt19937(\random_int(\PHP_INT_MIN, \PHP_INT_MAX), MT_RAND_PHP);
+$engines[] = new \Random\Engine\PcgOneseq128XslRr64(\random_int(\PHP_INT_MIN, \PHP_INT_MAX));
+$engines[] = new \Random\Engine\Secure(); 
 $generate = \random_bytes(16);
 $engines[] = new class () implements Random\Engine {
     public function generate(): string
@@ -46,9 +46,9 @@ foreach ($engines as $engine) {
 die('success');
 ?>
 --EXPECTF--
-Random\Engine\MersenneTwister: success
-Random\Engine\MersenneTwister: success
-Random\Engine\PCG64: success
+Random\Engine\Mt19937: success
+Random\Engine\Mt19937: success
+Random\Engine\PcgOneseq128XslRr64: success
 Serialization of 'Random\Engine\Secure' is not allowed
 Serialization of 'Random\Engine@anonymous' is not allowed
 UserEngine: success

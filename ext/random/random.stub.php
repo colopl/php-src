@@ -27,7 +27,7 @@ namespace {
 
 namespace Random\Engine
 {
-    final class MersenneTwister implements \Random\Engine
+    final class Mt19937 implements \Random\Engine
     {
         public function __construct(int|null $seed = null, int $mode = MT_RAND_MT19937) {}
 
@@ -40,29 +40,29 @@ namespace Random\Engine
         public function __debugInfo(): array {}
     }
 
-    final class PCG64 implements \Random\Engine
+    final class PcgOneseq128XslRr64 implements \Random\Engine
     {
         public function __construct(string|int|null $seed = null, string|int $seequence = 0) {}
 
-        /** @implementation-alias Random\Engine\MersenneTwister::generate */
+        /** @implementation-alias Random\Engine\Mt19937::generate */
         public function generate(): string {}
 
         public function jump(int $advance): void {}
         
-        /** @implementation-alias Random\Engine\MersenneTwister::__serialize */
+        /** @implementation-alias Random\Engine\Mt19937::__serialize */
         public function __serialize(): array {}
 
-        /** @implementation-alias Random\Engine\MersenneTwister::__unserialize */
+        /** @implementation-alias Random\Engine\Mt19937::__unserialize */
         public function __unserialize(array $data): void {}
 
-        /** @implementation-alias Random\Engine\MersenneTwister::__debugInfo */
+        /** @implementation-alias Random\Engine\Mt19937::__debugInfo */
         public function __debugInfo(): array {}
     }
 
     /** @not-serializable */
     final class Secure implements \Random\CryptoSafeEngine
     {
-        /** @implementation-alias Random\Engine\MersenneTwister::generate */
+        /** @implementation-alias Random\Engine\Mt19937::generate */
         public function generate(): string {}
     }
 }

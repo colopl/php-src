@@ -1,9 +1,9 @@
 --TEST--
-Random: Engine: PCG64: value
+Random: Engine: PcgOneseq128XslRr64: value
 --FILE--
 <?php
 
-$engine = new \Random\Engine\PCG64(1234);
+$engine = new \Random\Engine\PcgOneseq128XslRr64(1234);
 
 for ($i = 0; $i < 10000; $i++) {
     $engine->generate();

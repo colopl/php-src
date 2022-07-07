@@ -3,9 +3,9 @@ Random: Engine: User: compatibility
 --FILE--
 <?php
 
-$native_engine = new \Random\Engine\MersenneTwister(1234);
+$native_engine = new \Random\Engine\Mt19937(1234);
 $user_engine = new class () implements \Random\Engine {
-    public function __construct(private $engine = new \Random\Engine\MersenneTwister(1234))
+    public function __construct(private $engine = new \Random\Engine\Mt19937(1234))
     {
     }
 
@@ -17,13 +17,13 @@ $user_engine = new class () implements \Random\Engine {
 
 for ($i = 0; $i < 1000; $i++) {
     if ($native_engine->generate() !== $user_engine->generate()) {
-        die('failure MersenneTwister');
+        die('failure Mt19937');
     }
 }
 
-$native_engine = new \Random\Engine\PCG64(1234);
+$native_engine = new \Random\Engine\PcgOneseq128XslRr64(1234);
 $user_engine = new class () implements \Random\Engine {
-    public function __construct(private $engine = new \Random\Engine\PCG64(1234))
+    public function __construct(private $engine = new \Random\Engine\PcgOneseq128XslRr64(1234))
     {
     }
 
@@ -35,7 +35,7 @@ $user_engine = new class () implements \Random\Engine {
 
 for ($i = 0; $i < 1000; $i++) {
     if ($native_engine->generate() !== $user_engine->generate()) {
-        die('failure PCG64');
+        die('failure PcgOneseq128XslRr64');
     }
 }
 

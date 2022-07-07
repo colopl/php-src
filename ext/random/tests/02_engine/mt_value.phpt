@@ -1,9 +1,9 @@
 --TEST--
-Random: Engine: MersenneTwister: value
+Random: Engine: Mt19937: value
 --FILE--
 <?php
 
-$engine = new \Random\Engine\MersenneTwister(1234);
+$engine = new \Random\Engine\Mt19937(1234);
 
 for ($i = 0; $i < 10000; $i++) {
     $engine->generate();

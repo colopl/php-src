@@ -131,13 +131,13 @@ ZEND_DECLARE_MODULE_GLOBALS(random)
 PHPAPI zend_class_entry *random_ce_Random_Engine;
 PHPAPI zend_class_entry *random_ce_Random_CryptoSafeEngine;
 
-PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
-PHPAPI zend_class_entry *random_ce_Random_Engine_PCG64;
+PHPAPI zend_class_entry *random_ce_Random_Engine_Mt19937;
+PHPAPI zend_class_entry *random_ce_Random_Engine_PcgOneseq128XslRr64;
 PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
 PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
-static zend_object_handlers random_engine_mersennetwister_object_handlers;
-static zend_object_handlers random_engine_pcg64_object_handlers;
+static zend_object_handlers random_engine_mt19937_object_handlers;
+static zend_object_handlers random_engine_pcgoneseq128xslrr64_object_handlers;
 static zend_object_handlers random_engine_secure_object_handlers;
 static zend_object_handlers random_randomizer_object_handlers;
 
@@ -265,14 +265,14 @@ static inline uint64_t rand_range64(const php_random_algo *algo, php_random_stat
 	return result % umax;
 }
 
-static zend_object *php_random_engine_mersennetwister_new(zend_class_entry *ce)
+static zend_object *php_random_engine_mt19937_new(zend_class_entry *ce)
 {
-	return &php_random_engine_common_init(ce, &random_engine_mersennetwister_object_handlers, &php_random_algo_mersennetwister)->std;
+	return &php_random_engine_common_init(ce, &random_engine_mt19937_object_handlers, &php_random_algo_mt19937)->std;
 }
 
-static zend_object *php_random_engine_pcg64_new(zend_class_entry *ce)
+static zend_object *php_random_engine_pcgoneseq128xslrr64_new(zend_class_entry *ce)
 {
-	return &php_random_engine_common_init(ce, &random_engine_pcg64_object_handlers, &php_random_algo_pcg64s)->std;
+	return &php_random_engine_common_init(ce, &random_engine_pcgoneseq128xslrr64_object_handlers, &php_random_algo_pcgoneseq128xslrr64)->std;
 }
 
 static zend_object *php_random_engine_secure_new(zend_class_entry *ce)
@@ -386,22 +386,22 @@ PHPAPI zend_long php_random_range(const php_random_algo *algo, php_random_status
 /* {{{ php_random_default_algo */
 PHPAPI const php_random_algo *php_random_default_algo(void)
 {
-	return &php_random_algo_mersennetwister;
+	return &php_random_algo_mt19937;
 }
 /* }}} */
 
 /* {{{ php_random_default_status */
 PHPAPI php_random_status *php_random_default_status(void)
 {
-	php_random_status *status = RANDOM_G(mersennetwister);
+	php_random_status *status = RANDOM_G(mt19937);
 
 	if (!status) {
-		status = php_random_status_allocate(&php_random_algo_mersennetwister);
-		php_random_mersennetwister_seed_default(status->state);
-		RANDOM_G(mersennetwister) = status;
+		status = php_random_status_allocate(&php_random_algo_mt19937);
+		php_random_mt19937_seed_default(status->state);
+		RANDOM_G(mt19937) = status;
 	}
 
-	return RANDOM_G(mersennetwister);
+	return RANDOM_G(mt19937);
 }
 /* }}} */
 
@@ -424,21 +424,21 @@ PHPAPI double php_combined_lcg(void)
 PHPAPI void php_mt_srand(uint32_t seed)
 {
 	/* Seed the generator with a simple uint32 */
-	php_random_algo_mersennetwister.seed(php_random_default_status(), (zend_long) seed);
+	php_random_algo_mt19937.seed(php_random_default_status(), (zend_long) seed);
 }
 /* }}} */
 
 /* {{{ php_mt_rand */
 PHPAPI uint32_t php_mt_rand(void)
 {
-	return (uint32_t) php_random_algo_mersennetwister.generate(php_random_default_status());
+	return (uint32_t) php_random_algo_mt19937.generate(php_random_default_status());
 }
 /* }}} */
 
 /* {{{ php_mt_rand_range */
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max)
 {
-	return php_random_algo_mersennetwister.range(php_random_default_status(), min, max);
+	return php_random_algo_mt19937.range(php_random_default_status(), min, max);
 }
 /* }}} */
 
@@ -632,13 +632,13 @@ PHP_FUNCTION(mt_srand)
 {
 	zend_long seed = 0;
 	zend_long mode = MT_RAND_MT19937;
-	php_random_status *status = RANDOM_G(mersennetwister);
-	php_random_status_state_mersennetwister *state;
+	php_random_status *status = RANDOM_G(mt19937);
+	php_random_status_state_mt19937 *state;
 
 	if (!status) {
-		status = php_random_status_allocate(&php_random_algo_mersennetwister);
-		php_random_mersennetwister_seed_default(status->state);
-		RANDOM_G(mersennetwister) = status;
+		status = php_random_status_allocate(&php_random_algo_mt19937);
+		php_random_mt19937_seed_default(status->state);
+		RANDOM_G(mt19937) = status;
 	}
 
 	state = status->state;
@@ -652,9 +652,9 @@ PHP_FUNCTION(mt_srand)
 	state->mode = mode;
 
 	if (ZEND_NUM_ARGS() == 0) {
-		php_random_mersennetwister_seed_default(status->state);
+		php_random_mt19937_seed_default(status->state);
 	} else {
-		php_random_algo_mersennetwister.seed(status, (uint64_t) seed);
+		php_random_algo_mt19937.seed(status, (uint64_t) seed);
 	}
 }
 /* }}} */
@@ -781,21 +781,21 @@ PHP_MINIT_FUNCTION(random)
 	/* Random\CryptoSafeEngine */
 	random_ce_Random_CryptoSafeEngine = register_class_Random_CryptoSafeEngine(random_ce_Random_Engine);
 
-	/* Random\Engine\PCG64 */
-	random_ce_Random_Engine_PCG64 = register_class_Random_Engine_PCG64(random_ce_Random_Engine);
-	random_ce_Random_Engine_PCG64->create_object = php_random_engine_pcg64_new;
-	memcpy(&random_engine_pcg64_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	random_engine_pcg64_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_pcg64_object_handlers.free_obj = php_random_engine_common_free_object;
-	random_engine_pcg64_object_handlers.clone_obj = php_random_engine_common_clone_object;
+	/* Random\Engine\PcgOnseq128XslRr64 */
+	random_ce_Random_Engine_PcgOneseq128XslRr64 = register_class_Random_Engine_PcgOneseq128XslRr64(random_ce_Random_Engine);
+	random_ce_Random_Engine_PcgOneseq128XslRr64->create_object = php_random_engine_pcgoneseq128xslrr64_new;
+	memcpy(&random_engine_pcgoneseq128xslrr64_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	random_engine_pcgoneseq128xslrr64_object_handlers.offset = XtOffsetOf(php_random_engine, std);
+	random_engine_pcgoneseq128xslrr64_object_handlers.free_obj = php_random_engine_common_free_object;
+	random_engine_pcgoneseq128xslrr64_object_handlers.clone_obj = php_random_engine_common_clone_object;
 
-	/* Random\Engine\MersenneTwister */
-	random_ce_Random_Engine_MersenneTwister = register_class_Random_Engine_MersenneTwister(random_ce_Random_Engine);
-	random_ce_Random_Engine_MersenneTwister->create_object = php_random_engine_mersennetwister_new;
-	memcpy(&random_engine_mersennetwister_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	random_engine_mersennetwister_object_handlers.offset = XtOffsetOf(php_random_engine, std);
-	random_engine_mersennetwister_object_handlers.free_obj = php_random_engine_common_free_object;
-	random_engine_mersennetwister_object_handlers.clone_obj = php_random_engine_common_clone_object;
+	/* Random\Engine\Mt19937 */
+	random_ce_Random_Engine_Mt19937 = register_class_Random_Engine_Mt19937(random_ce_Random_Engine);
+	random_ce_Random_Engine_Mt19937->create_object = php_random_engine_mt19937_new;
+	memcpy(&random_engine_mt19937_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	random_engine_mt19937_object_handlers.offset = XtOffsetOf(php_random_engine, std);
+	random_engine_mt19937_object_handlers.free_obj = php_random_engine_common_free_object;
+	random_engine_mt19937_object_handlers.clone_obj = php_random_engine_common_clone_object;
 
 	/* Random\Engine\Secure */
 	random_ce_Random_Engine_Secure = register_class_Random_Engine_Secure(random_ce_Random_CryptoSafeEngine);
@@ -819,7 +819,7 @@ PHP_MINIT_FUNCTION(random)
 	RANDOM_G(random_fd) = -1;
 
 	RANDOM_G(combined_lcg) = NULL;
-	RANDOM_G(mersennetwister) = NULL;
+	RANDOM_G(mt19937) = NULL;
 	
 	return SUCCESS;
 }
@@ -845,10 +845,10 @@ PHP_RSHUTDOWN_FUNCTION(random)
 	}
 	RANDOM_G(combined_lcg) = NULL;
 
-	if (RANDOM_G(mersennetwister)) {
-		php_random_status_free(RANDOM_G(mersennetwister));
+	if (RANDOM_G(mt19937)) {
+		php_random_status_free(RANDOM_G(mt19937));
 	}
-	RANDOM_G(mersennetwister) = NULL;
+	RANDOM_G(mt19937) = NULL;
 
 	return SUCCESS;
 }

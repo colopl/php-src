@@ -141,7 +141,7 @@ static inline php_random_uint128_t php_random_uint128_multiply(php_random_uint12
 	return r;
 }
 
-static inline uint64_t php_random_pcg64s_rotr64(php_random_uint128_t num)
+static inline uint64_t php_random_pcgoneseq128xslrr64_rotr64(php_random_uint128_t num)
 {
 	const uint64_t
 		v = (num.hi ^ num.lo),
@@ -181,7 +181,7 @@ static inline php_random_uint128_t php_random_uint128_multiply(php_random_uint12
 	return num1 * num2;
 }
 
-static inline uint64_t php_random_pcg64s_rotr64(php_random_uint128_t num)
+static inline uint64_t php_random_pcgoneseq128xslrr64_rotr64(php_random_uint128_t num)
 {
 	const uint64_t 
 		v = ((uint64_t) (num >> 64U)) ^ (uint64_t) num,
@@ -209,15 +209,15 @@ typedef struct _php_random_status_state_combinedlcg {
 	int32_t state[2];
 } php_random_status_state_combinedlcg;
 
-typedef struct _php_random_status_state_mersennetwister {
+typedef struct _php_random_status_state_mt19937 {
 	uint32_t state[MT_N];
 	uint32_t count;
 	uint32_t mode;
-} php_random_status_state_mersennetwister;
+} php_random_status_state_mt19937;
 
-typedef struct _php_random_status_state_pcg64s {
+typedef struct _php_random_status_state_pcgoneseq128xslrr64 {
 	php_random_uint128_t state;
-} php_random_status_state_pcg64s;
+} php_random_status_state_pcgoneseq128xslrr64;
 
 typedef struct _php_random_status_state_user {
 	zend_object *object;
@@ -235,8 +235,8 @@ typedef struct _php_random_algo {
 } php_random_algo;
 
 extern PHPAPI const php_random_algo php_random_algo_combinedlcg;
-extern PHPAPI const php_random_algo php_random_algo_mersennetwister;
-extern PHPAPI const php_random_algo php_random_algo_pcg64s;
+extern PHPAPI const php_random_algo php_random_algo_mt19937;
+extern PHPAPI const php_random_algo php_random_algo_pcgoneseq128xslrr64;
 extern PHPAPI const php_random_algo php_random_algo_secure;
 extern PHPAPI const php_random_algo php_random_algo_user;
 
@@ -258,8 +258,8 @@ typedef struct _php_random_randomizer {
 extern PHPAPI zend_class_entry *random_ce_Random_Engine;
 extern PHPAPI zend_class_entry *random_ce_Random_CryptoSafeEngine;
 
-extern PHPAPI zend_class_entry *random_ce_Random_Engine_PCG64;
-extern PHPAPI zend_class_entry *random_ce_Random_Engine_MersenneTwister;
+extern PHPAPI zend_class_entry *random_ce_Random_Engine_PcgOneseq128XslRr64;
+extern PHPAPI zend_class_entry *random_ce_Random_Engine_Mt19937;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
 extern PHPAPI zend_class_entry *random_ce_Random_Randomizer;
 
@@ -287,9 +287,9 @@ PHPAPI php_random_status *php_random_default_status(void);
 
 PHPAPI void php_random_combinedlcg_seed_default(php_random_status_state_combinedlcg *state);
 
-PHPAPI void php_random_mersennetwister_seed_default(php_random_status_state_mersennetwister *state);
+PHPAPI void php_random_mt19937_seed_default(php_random_status_state_mt19937 *state);
 
-PHPAPI void php_random_pcg64s_advance(php_random_status_state_pcg64s *state, uint64_t advance);
+PHPAPI void php_random_pcgoneseq128xslrr64_advance(php_random_status_state_pcgoneseq128xslrr64 *state, uint64_t advance);
 
 extern zend_module_entry random_module_entry;
 # define phpext_random_ptr &random_module_entry
@@ -301,7 +301,7 @@ PHP_RSHUTDOWN_FUNCTION(random);
 
 ZEND_BEGIN_MODULE_GLOBALS(random)
 	php_random_status *combined_lcg;
-	php_random_status *mersennetwister;
+	php_random_status *mt19937;
 	int random_fd;
 ZEND_END_MODULE_GLOBALS(random)
 

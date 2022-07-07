@@ -48,7 +48,7 @@
 #define twist(m,u,v)  (m ^ (mixBits(u,v)>>1) ^ ((uint32_t)(-(int32_t)(loBit(v))) & 0x9908b0dfU))
 #define twist_php(m,u,v)  (m ^ (mixBits(u,v)>>1) ^ ((uint32_t)(-(int32_t)(loBit(u))) & 0x9908b0dfU))
 
-static inline void mersennetwister_reload(php_random_status_state_mersennetwister *state) {
+static inline void mt19937_reload(php_random_status_state_mt19937 *state) {
 	uint32_t *p = state->state;
 	int i;
 
@@ -73,7 +73,7 @@ static inline void mersennetwister_reload(php_random_status_state_mersennetwiste
 	state->count = 0;
 }
 
-static inline void mersennetwister_seed_state(php_random_status_state_mersennetwister *state, uint64_t seed)
+static inline void mt19937_seed_state(php_random_status_state_mt19937 *state, uint64_t seed)
 {
 	/* Initialize generator state with seed
 	   See Knuth TAOCP Vol 2, 3rd Ed, p.106 for multiplier.
@@ -84,21 +84,21 @@ static inline void mersennetwister_seed_state(php_random_status_state_mersennetw
 		state->state[state->count] = (1812433253U * (state->state[state->count - 1] ^ (state->state[state->count - 1] >> 30)) + state->count) & 0xffffffffU;
 	}
 
-	mersennetwister_reload(state);
+	mt19937_reload(state);
 }
 
 static void seed(php_random_status *status, uint64_t seed)
 {
-    mersennetwister_seed_state(status->state, seed);
+    mt19937_seed_state(status->state, seed);
 }
 
 static uint64_t generate(php_random_status *status)
 {
-	php_random_status_state_mersennetwister *s = status->state;
+	php_random_status_state_mt19937 *s = status->state;
 	uint32_t s1;
 
 	if (s->count >= MT_N) {
-		mersennetwister_reload(s);
+		mt19937_reload(s);
 	}
 
 	s1 = s->state[s->count++];
@@ -111,13 +111,13 @@ static uint64_t generate(php_random_status *status)
 
 static zend_long range(php_random_status *status, zend_long min, zend_long max)
 {
-	php_random_status_state_mersennetwister *s = status->state;
+	php_random_status_state_mt19937 *s = status->state;
 
 	if (s->mode == MT_RAND_MT19937) {
-		return php_random_range(&php_random_algo_mersennetwister, status, min, max);
+		return php_random_range(&php_random_algo_mt19937, status, min, max);
 	}
 
-	uint64_t r = php_random_algo_mersennetwister.generate(status) >> 1;
+	uint64_t r = php_random_algo_mt19937.generate(status) >> 1;
 	/* Legacy mode deliberately not inside php_mt_rand_range()
 	 * to prevent other functions being affected */
 	RAND_RANGE_BADSCALING(r, min, max, PHP_MT_RAND_MAX);
@@ -126,7 +126,7 @@ static zend_long range(php_random_status *status, zend_long min, zend_long max)
 
 static bool serialize(php_random_status *status, HashTable *data)
 {
-	php_random_status_state_mersennetwister *s = status->state;
+	php_random_status_state_mt19937 *s = status->state;
 	zval tmp;
 	uint32_t i;
 
@@ -144,7 +144,7 @@ static bool serialize(php_random_status *status, HashTable *data)
 
 static bool unserialize(php_random_status *status, HashTable *data)
 {
-	php_random_status_state_mersennetwister *s = status->state;
+	php_random_status_state_mt19937 *s = status->state;
 	zval *tmp;
 	uint32_t i;
 
@@ -170,9 +170,9 @@ static bool unserialize(php_random_status *status, HashTable *data)
 	return true;
 }
 
-const php_random_algo php_random_algo_mersennetwister = {
+const php_random_algo php_random_algo_mt19937 = {
 	sizeof(uint32_t),
-	sizeof(php_random_status_state_mersennetwister),
+	sizeof(php_random_status_state_mt19937),
 	seed,
 	generate,
 	range,
@@ -180,8 +180,8 @@ const php_random_algo php_random_algo_mersennetwister = {
 	unserialize
 };
 
-/* {{{ php_random_mersennetwister_seed_default */
-PHPAPI void php_random_mersennetwister_seed_default(php_random_status_state_mersennetwister *state)
+/* {{{ php_random_mt19937_seed_default */
+PHPAPI void php_random_mt19937_seed_default(php_random_status_state_mt19937 *state)
 {
 	zend_long seed = 0;
 
@@ -190,15 +190,15 @@ PHPAPI void php_random_mersennetwister_seed_default(php_random_status_state_mers
 		seed = GENERATE_SEED();
 	}
 
-	mersennetwister_seed_state(state, (uint64_t) seed);
+	mt19937_seed_state(state, (uint64_t) seed);
 }
 /* }}} */
 
-/* {{{ Random\Engine\MersenneTwister::__construct() */
-PHP_METHOD(Random_Engine_MersenneTwister, __construct)
+/* {{{ Random\Engine\Mt19937::__construct() */
+PHP_METHOD(Random_Engine_Mt19937, __construct)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_status_state_mersennetwister *state = engine->status->state;
+	php_random_status_state_mt19937 *state = engine->status->state;
 	zend_long seed, mode = MT_RAND_MT19937;
 	bool seed_is_null = true;
 
@@ -228,8 +228,8 @@ PHP_METHOD(Random_Engine_MersenneTwister, __construct)
 }
 /* }}} */
 
-/* {{{ Random\Engine\MersenneTwister::generate() */
-PHP_METHOD(Random_Engine_MersenneTwister, generate)
+/* {{{ Random\Engine\Mt19937::generate() */
+PHP_METHOD(Random_Engine_Mt19937, generate)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
 	uint64_t generated;
@@ -258,8 +258,8 @@ PHP_METHOD(Random_Engine_MersenneTwister, generate)
 }
 /* }}} */
 
-/* {{{ Random\Engine\MersenneTwister::__serialize() */
-PHP_METHOD(Random_Engine_MersenneTwister, __serialize)
+/* {{{ Random\Engine\Mt19937::__serialize() */
+PHP_METHOD(Random_Engine_Mt19937, __serialize)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
 	zval t;
@@ -283,8 +283,8 @@ PHP_METHOD(Random_Engine_MersenneTwister, __serialize)
 }
 /* }}} */
 
-/* {{{ Random\Engine\MersenneTwister::__unserialize() */
-PHP_METHOD(Random_Engine_MersenneTwister, __unserialize)
+/* {{{ Random\Engine\Mt19937::__unserialize() */
+PHP_METHOD(Random_Engine_Mt19937, __unserialize)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
 	HashTable *d;
@@ -315,8 +315,8 @@ PHP_METHOD(Random_Engine_MersenneTwister, __unserialize)
 }
 /* }}} */
 
-/* {{{ Random\Engine\MersenneTwister::__debugInfo() */
-PHP_METHOD(Random_Engine_MersenneTwister, __debugInfo)
+/* {{{ Random\Engine\Mt19937::__debugInfo() */
+PHP_METHOD(Random_Engine_Mt19937, __debugInfo)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
 	zval t;
