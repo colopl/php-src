@@ -14,7 +14,6 @@ $user_randomizer = new \Random\Randomizer(new class () implements \Random\Engine
         return $this->engine->generate();
     }
 });
-
 for ($i = 0; $i < 1000; $i++) {
     $native = $native_randomizer->getInt();
     $user = $user_randomizer->getInt();
@@ -26,16 +25,16 @@ for ($i = 0; $i < 1000; $i++) {
 try {
     $native_randomizer = new \Random\Randomizer(new \Random\Engine\PcgOneseq128XslRr64(1234));
     $user_randomizer = new \Random\Randomizer(new class () implements \Random\Engine {
-    public function __construct(private $engine = new \Random\Engine\PcgOneseq128XslRr64(1234))
-    {
-    }
+        public function __construct(private $engine = new \Random\Engine\PcgOneseq128XslRr64(1234))
+        {
+        }
 
-    public function generate(): string
-    {
-        return $this->engine->generate();
-    }
-});
-
+        public function generate(): string
+        {
+            return $this->engine->generate();
+        }
+    });
+    
     for ($i = 0; $i < 1000; $i++) {
         $native = $native_randomizer->getInt();
         $user = $user_randomizer->getInt();
@@ -55,16 +54,16 @@ try {
 try {
     $native_randomizer = new \Random\Randomizer(new \Random\Engine\Xoshiro256StarStar(1234));
     $user_randomizer = new \Random\Randomizer(new class () implements \Random\Engine {
-    public function __construct(private $engine = new \Random\Engine\Xoshiro256StarStar(1234))
-    {
-    }
+        public function __construct(private $engine = new \Random\Engine\Xoshiro256StarStar(1234))
+        {
+        }
 
-    public function generate(): string
-    {
-        return $this->engine->generate();
-    }
-});
-
+        public function generate(): string
+        {
+            return $this->engine->generate();
+        }
+    });
+    
     for ($i = 0; $i < 1000; $i++) {
         $native = $native_randomizer->getInt();
         $user = $user_randomizer->getInt();
