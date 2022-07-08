@@ -87,7 +87,7 @@ PHP_METHOD(Random_Randomizer, __construct)
 
 	/* Create default RNG instance */
 	if (!engine_object) {
-        engine_object = random_ce_Random_Engine_Secure->create_object(random_ce_Random_Engine_Secure);
+		engine_object = random_ce_Random_Engine_Secure->create_object(random_ce_Random_Engine_Secure);
 
 		/* No need self-refcount */
 		GC_DELREF(engine_object);

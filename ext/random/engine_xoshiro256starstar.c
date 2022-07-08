@@ -53,7 +53,7 @@ static inline uint64_t rotl(const uint64_t x, int k) {
 
 static inline uint64_t generate_state(php_random_status_state_xoshiro256starstar *s)
 {
-    const uint64_t r = rotl(s->state[1] * 5, 7) * 9;
+	const uint64_t r = rotl(s->state[1] * 5, 7) * 9;
 	const uint64_t t = s->state[1] << 17;
 
 	s->state[2] ^= s->state[0];
@@ -81,7 +81,7 @@ static inline void jump(php_random_status_state_xoshiro256starstar *state, const
 				s2 ^= state->state[2];
 				s3 ^= state->state[3];
 			}
-            
+
 			generate_state(state);
 		}
 	}
@@ -94,12 +94,12 @@ static inline void jump(php_random_status_state_xoshiro256starstar *state, const
 
 static inline void seed256(php_random_status *status, uint64_t s0, uint64_t s1, uint64_t s2, uint64_t s3)
 {
-    php_random_status_state_xoshiro256starstar *s = status->state;
+	php_random_status_state_xoshiro256starstar *s = status->state;
 
-    s->state[0] = s0;
-    s->state[1] = s1;
-    s->state[2] = s2;
-    s->state[3] = s3;
+	s->state[0] = s0;
+	s->state[1] = s1;
+	s->state[2] = s2;
+	s->state[3] = s3;
 }
 
 static void seed(php_random_status *status, uint64_t seed)
@@ -111,23 +111,23 @@ static void seed(php_random_status *status, uint64_t seed)
 	s[2] = splitmix64(&seed);
 	s[3] = splitmix64(&seed);
 
-    seed256(status, s[0], s[1], s[2], s[3]);
+	seed256(status, s[0], s[1], s[2], s[3]);
 }
 
 static uint64_t generate(php_random_status *status)
 {
-    return generate_state(status->state);
+	return generate_state(status->state);
 }
 
 static zend_long range(php_random_status *status, zend_long min, zend_long max)
 {
-    return php_random_range(&php_random_algo_xoshiro256starstar, status, min, max);
+	return php_random_range(&php_random_algo_xoshiro256starstar, status, min, max);
 }
 
 static bool serialize(php_random_status *status, HashTable *data)
 {
-    php_random_status_state_xoshiro256starstar *s = status->state;
-    zval z;
+	php_random_status_state_xoshiro256starstar *s = status->state;
+	zval z;
 	uint32_t i;
 
 	for (i = 0; i < 4; i++) {
@@ -157,50 +157,50 @@ static bool unserialize(php_random_status *status, HashTable *data)
 }
 
 const php_random_algo php_random_algo_xoshiro256starstar = {
-    sizeof(uint64_t),
-    sizeof(php_random_status_state_xoshiro256starstar),
-    seed,
-    generate,
-    range,
-    serialize,
-    unserialize
+	sizeof(uint64_t),
+	sizeof(php_random_status_state_xoshiro256starstar),
+	seed,
+	generate,
+	range,
+	serialize,
+	unserialize
 };
 
 PHPAPI void php_random_xoshiro256starstar_jump(php_random_status_state_xoshiro256starstar *state)
 {
 	static const uint64_t jmp[] = {0x180ec6d33cfd0aba, 0xd5a61266f0c9392c, 0xa9582618e03fc9aa, 0x39abdc4529b1661c};
-    jump(state, jmp);
+	jump(state, jmp);
 }
 
 PHPAPI void php_random_xoshiro256starstar_jump_long(php_random_status_state_xoshiro256starstar *state)
 {
-    static const uint64_t jmp[] = {0x76e15d3efefdcbbf, 0xc5004e441c522fb3, 0x77710069854ee241, 0x39109bb02acbe635};
-    jump(state, jmp);
+	static const uint64_t jmp[] = {0x76e15d3efefdcbbf, 0xc5004e441c522fb3, 0x77710069854ee241, 0x39109bb02acbe635};
+	jump(state, jmp);
 }
 
 /* {{{ Random\Engine\Xoshiro256StarStar::jump() */
 PHP_METHOD(Random_Engine_Xoshiro256StarStar, jump)
 {
-    php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-    php_random_status *status = engine->status;
-    php_random_status_state_xoshiro256starstar *state = status->state;
+	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	php_random_status *status = engine->status;
+	php_random_status_state_xoshiro256starstar *state = status->state;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
-    php_random_xoshiro256starstar_jump(state);
+	php_random_xoshiro256starstar_jump(state);
 }
 /* }}} */
 
 /* {{{ Random\Engine\Xoshiro256StarStar::jumpLong() */
 PHP_METHOD(Random_Engine_Xoshiro256StarStar, jumpLong)
 {
-    php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-    php_random_status *status = engine->status;
-    php_random_status_state_xoshiro256starstar *state = status->state;
+	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
+	php_random_status *status = engine->status;
+	php_random_status_state_xoshiro256starstar *state = status->state;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
-    php_random_xoshiro256starstar_jump_long(state);
+	php_random_xoshiro256starstar_jump_long(state);
 }
 /* }}} */
 
@@ -236,7 +236,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 						t[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
 					}
 				}
-                seed256(engine->status, t[0], t[1], t[2], t[3]);
+				seed256(engine->status, t[0], t[1], t[2], t[3]);
 			} else {
 				zend_argument_value_error(1, "state strings must be 32 bytes");
 				RETURN_THROWS();

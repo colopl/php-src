@@ -89,7 +89,7 @@ static inline void mt19937_seed_state(php_random_status_state_mt19937 *state, ui
 
 static void seed(php_random_status *status, uint64_t seed)
 {
-    mt19937_seed_state(status->state, seed);
+	mt19937_seed_state(status->state, seed);
 }
 
 static uint64_t generate(php_random_status *status)

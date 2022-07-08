@@ -498,7 +498,6 @@ PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw)
 		    [#######=============] (we're going to write over the = region)
 		             \\\\\\\\\\\\\
 		              amount_to_read
-
 		*/
 		size_t amount_to_read = size - read_bytes;
 #if defined(__linux__)
