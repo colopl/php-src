@@ -27,6 +27,9 @@ namespace {
 
 namespace Random\Engine
 {
+    /**
+     * @strict-properties
+     */
     final class Mt19937 implements \Random\Engine
     {
         public function __construct(int|null $seed = null, int $mode = MT_RAND_MT19937) {}
@@ -40,6 +43,9 @@ namespace Random\Engine
         public function __debugInfo(): array {}
     }
 
+    /**
+     * @strict-properties
+     */
     final class PcgOneseq128XslRr64 implements \Random\Engine
     {
         public function __construct(string|int|null $seed = null, string|int $seequence = 0) {}
@@ -59,6 +65,9 @@ namespace Random\Engine
         public function __debugInfo(): array {}
     }
 
+    /**
+     * @strict-properties
+     */
     final class Xoshiro256StarStar implements \Random\Engine
     {
         public function __construct(string|int|null $seed = null) {}
@@ -80,7 +89,10 @@ namespace Random\Engine
         public function __debugInfo(): array {}
     }
 
-    /** @not-serializable */
+    /**
+     * @strict-properties
+     * @not-serializable
+     */
     final class Secure implements \Random\CryptoSafeEngine
     {
         /** @implementation-alias Random\Engine\Mt19937::generate */
@@ -99,6 +111,9 @@ namespace Random
     {
     }
 
+    /**
+     * @strict-properties
+     */
     final class Randomizer
     {
         public readonly Engine $engine;
