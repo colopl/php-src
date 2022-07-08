@@ -126,7 +126,7 @@ namespace Random
 
         public function shuffleArray(array $array): array {}
 
-        public function shuffleBytes(string $binary): string {}
+        public function shuffleBytes(string $bytes): string {}
 
         public function __serialize(): array {}
 
