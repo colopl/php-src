@@ -186,7 +186,6 @@ PHPAPI void php_random_mt19937_seed_default(php_random_status_state_mt19937 *sta
 	zend_long seed = 0;
 
 	if (php_random_bytes_silent(&seed, sizeof(zend_long)) == FAILURE) {
-		/* FIXME: This is a security risk. Shall I throw an E_WARNING? */
 		seed = GENERATE_SEED();
 	}
 
