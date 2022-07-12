@@ -412,6 +412,61 @@ PHPAPI php_random_status *php_random_default_status(void)
 }
 /* }}} */
 
+/* this is read-only, so it's ok */
+ZEND_SET_ALIGNED(16, static const char hexconvtab[]) = "0123456789abcdef";
+
+/* {{{ php_random_bin2hex */
+/* stolen from standard/string.c */
+PHPAPI zend_string *php_random_bin2hex(const unsigned char *ptr, const size_t len)
+{
+	zend_string *str;
+	size_t i, j;
+
+	str = zend_string_safe_alloc(len, 2 * sizeof(char), 0, 0);
+
+	for (i = j = 0; i < len; i++) {
+		ZSTR_VAL(str)[j++] = hexconvtab[ptr[i] >> 4];
+		ZSTR_VAL(str)[j++] = hexconvtab[ptr[i] & 15];
+	}
+	ZSTR_VAL(str)[j] = '\0';
+
+	return str;
+}
+/* }}} */
+
+/* {{{ php_random_hex2bin */
+/* stolen from standard/string.c */
+PHPAPI void php_random_hex2bin(zend_string *hexstr, void *dest)
+{
+	size_t len = hexstr->len >> 1, i, j;
+	unsigned char *str = (unsigned char *) hexstr->val, c, l, d;
+	unsigned char *ptr = (unsigned char *) dest;
+	int is_letter;
+
+	for (i = j = 0; i < len; i++) {
+		c = str[j++];
+		l = c & ~0x20;
+		is_letter = ((unsigned int) ((l - 'A') ^ (l - 'F' - 1))) >> (8 * sizeof(unsigned int) - 1);
+
+		/* basically (c >= '0' && c <= '9') || (l >= 'A' && l <= 'F') */
+		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(unsigned int) - 1)) | is_letter)) {
+			d = (l - 0x10 - 0x27 * is_letter) << 4;
+		} else {
+			return;
+		}
+		c = str[j++];
+		l = c & ~0x20;
+		is_letter = ((unsigned int) ((l - 'A') ^ (l - 'F' - 1))) >> (8 * sizeof(unsigned int) - 1);
+		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(unsigned int) - 1)) | is_letter)) {
+			d |= l - 0x10 - 0x27 * is_letter;
+		} else {
+			return;
+		}
+		ptr[i] = d;
+	}
+}
+/* }}} */
+
 /* {{{ php_combined_lcg */
 PHPAPI double php_combined_lcg(void)
 {

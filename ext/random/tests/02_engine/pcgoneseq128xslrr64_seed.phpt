@@ -35,9 +35,9 @@ object(Random\Engine\PcgOneseq128XslRr64)#%d (%d) {
   ["__states"]=>
   array(2) {
     [0]=>
-    string(19) "5801214129886722938"
+    string(16) "7afbdfd5830d8250"
     [1]=>
-    string(20) "18211065239821862367"
+    string(16) "dfc50b6959b3bafc"
   }
 }
 string(16) "c42016cd9005ef2e"

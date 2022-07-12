@@ -131,7 +131,7 @@ static bool serialize(php_random_status *status, HashTable *data)
 	uint32_t i;
 
 	for (i = 0; i < 4; i++) {
-		ZVAL_STR(&z, zend_strpprintf(0, "%" PRIu64, s->state[i]));
+		ZVAL_STR(&z, php_random_bin2hex((unsigned char *) &s->state[i], sizeof(uint64_t)));
 		zend_hash_next_index_insert(data, &z);
 	}
 
@@ -150,7 +150,7 @@ static bool unserialize(php_random_status *status, HashTable *data)
 			return FAILURE;
 		}
 
-		s->state[i] = strtoull(ZSTR_VAL(Z_STR_P(z)), NULL, 10);
+		php_random_hex2bin(Z_STR_P(z), &s->state[i]);
 	}
 
 	return true;

@@ -291,6 +291,9 @@ PHPAPI zend_long php_random_range(const php_random_algo *algo, php_random_status
 PHPAPI const php_random_algo *php_random_default_algo(void);
 PHPAPI php_random_status *php_random_default_status(void);
 
+PHPAPI zend_string *php_random_bin2hex(const unsigned char *ptr, const size_t len);
+PHPAPI void php_random_hex2bin(zend_string *hexstr, void *dest);
+
 PHPAPI void php_random_combinedlcg_seed_default(php_random_status_state_combinedlcg *state);
 
 PHPAPI void php_random_mt19937_seed_default(php_random_status_state_mt19937 *state);
