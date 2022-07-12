@@ -20,7 +20,7 @@ try {
 }
 
 try {
-    var_dump($randomizer->getBytes(1));
+    var_dump(bin2hex($randomizer->getBytes(1)));
 } catch (\RuntimeException $e) {
     echo $e->getMessage() . PHP_EOL;
 }
