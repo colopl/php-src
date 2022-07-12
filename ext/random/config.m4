@@ -6,7 +6,7 @@ AC_CHECK_DECLS([arc4random_buf])
 dnl
 dnl Setup extension
 dnl
-PHP_NEW_EXTENSION(random, 
+PHP_NEW_EXTENSION(random,
 	  random.c \
       engine_combinedlcg.c \
       engine_mt19937.c \
