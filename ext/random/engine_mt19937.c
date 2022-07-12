@@ -75,15 +75,18 @@ static inline void mt19937_reload(php_random_status_state_mt19937 *state) {
 
 static inline void mt19937_seed_state(php_random_status_state_mt19937 *state, uint64_t seed)
 {
+	uint32_t i, prev_state;
+
 	/* Initialize generator state with seed
 	   See Knuth TAOCP Vol 2, 3rd Ed, p.106 for multiplier.
 	   In previous versions, most significant bits (MSBs) of the seed affect
 	   only MSBs of the state array.  Modified 9 Jan 2002 by Makoto Matsumoto. */
 	state->state[0] = seed & 0xffffffffU;
-	for (state->count = 1; state->count < MT_N; state->count++) {
-		uint32_t prev_state = state->state[state->count - 1];
-		state->state[state->count] = (1812433253U * (prev_state  ^ (prev_state  >> 30)) + state->count) & 0xffffffffU;
+	for (i = 1; i < MT_N; i++) {
+		prev_state = state->state[i - 1];
+		state->state[i] = (1812433253U * (prev_state  ^ (prev_state  >> 30)) + i) & 0xffffffffU;
 	}
+	state->count = i;
 
 	mt19937_reload(state);
 }
