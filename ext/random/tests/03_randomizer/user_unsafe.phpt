@@ -101,9 +101,9 @@ object(RuntimeException)#%d (%d) {
       ["args"]=>
       array(2) {
         [0]=>
-        int(-9223372036854775808)
+        int(%d)
         [1]=>
-        int(9223372036854775807)
+        int(%d)
       }
     }
   }
