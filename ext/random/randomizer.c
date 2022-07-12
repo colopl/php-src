@@ -227,6 +227,38 @@ PHP_METHOD(Random_Randomizer, shuffleBytes)
 }
 /* }}} */
 
+/* {{{ Pick keys */
+PHP_METHOD(Random_Randomizer, pickArrayKeys)
+{
+	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
+	zval *input, t;
+	zend_long num_req;
+
+	ZEND_PARSE_PARAMETERS_START(2, 2);
+		Z_PARAM_ARRAY(input)
+		Z_PARAM_LONG(num_req)
+	ZEND_PARSE_PARAMETERS_END();
+
+	if (!php_array_pick_keys(
+		randomizer->algo,
+		randomizer->status,
+		input,
+		num_req,
+		return_value,
+		false)
+	) {
+		RETURN_THROWS();
+	}
+
+	/* Keep compatibility, But the result is always an array */
+	if (Z_TYPE_P(return_value) != IS_ARRAY) {
+		ZVAL_COPY_VALUE(&t, return_value);
+		array_init(return_value);
+		zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &t);
+	}
+}
+/* }}} */
+
 /* {{{ Random\Randomizer::__serialize() */
 PHP_METHOD(Random_Randomizer, __serialize)
 {

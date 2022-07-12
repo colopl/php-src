@@ -128,6 +128,8 @@ namespace Random
 
         public function shuffleBytes(string $bytes): string {}
 
+        public function pickArrayKeys(array $array, int $num): array {}
+
         public function __serialize(): array {}
 
         public function __unserialize(array $data): void {}

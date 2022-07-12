@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 33656d2f32d674715eb84579caf79c0f53ddf61d */
+ * Stub hash: 137cc46035155a1106a42f15b486b09e596dadc4 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -103,6 +103,11 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_Randomizer_shuffleB
 	ZEND_ARG_TYPE_INFO(0, bytes, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Random_Randomizer_pickArrayKeys, 0, 2, IS_ARRAY, 0)
+	ZEND_ARG_TYPE_INFO(0, array, IS_ARRAY, 0)
+	ZEND_ARG_TYPE_INFO(0, num, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
 #define arginfo_class_Random_Randomizer___serialize arginfo_class_Random_Engine_Mt19937___serialize
 
 #define arginfo_class_Random_Randomizer___unserialize arginfo_class_Random_Engine_Mt19937___unserialize
@@ -130,6 +135,7 @@ ZEND_METHOD(Random_Randomizer, getInt);
 ZEND_METHOD(Random_Randomizer, getBytes);
 ZEND_METHOD(Random_Randomizer, shuffleArray);
 ZEND_METHOD(Random_Randomizer, shuffleBytes);
+ZEND_METHOD(Random_Randomizer, pickArrayKeys);
 ZEND_METHOD(Random_Randomizer, __serialize);
 ZEND_METHOD(Random_Randomizer, __unserialize);
 
@@ -204,6 +210,7 @@ static const zend_function_entry class_Random_Randomizer_methods[] = {
 	ZEND_ME(Random_Randomizer, getBytes, arginfo_class_Random_Randomizer_getBytes, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, shuffleArray, arginfo_class_Random_Randomizer_shuffleArray, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, shuffleBytes, arginfo_class_Random_Randomizer_shuffleBytes, ZEND_ACC_PUBLIC)
+	ZEND_ME(Random_Randomizer, pickArrayKeys, arginfo_class_Random_Randomizer_pickArrayKeys, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, __serialize, arginfo_class_Random_Randomizer___serialize, ZEND_ACC_PUBLIC)
 	ZEND_ME(Random_Randomizer, __unserialize, arginfo_class_Random_Randomizer___unserialize, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
