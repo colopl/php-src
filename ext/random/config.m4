@@ -6,5 +6,14 @@ AC_CHECK_DECLS([arc4random_buf])
 dnl
 dnl Setup extension
 dnl
-PHP_NEW_EXTENSION(random, random.c engine_combinedlcg.c engine_mt19937.c engine_pcgoneseq128xslrr64.c engine_xoshiro256starstar.c engine_secure.c engine_user.c randomizer.c, , , -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
+PHP_NEW_EXTENSION(random, 
+	  random.c \
+      engine_combinedlcg.c \
+      engine_mt19937.c \
+      engine_pcgoneseq128xslrr64.c \
+      engine_xoshiro256starstar.c \
+      engine_secure.c \
+      engine_user.c \
+      randomizer.c,
+      no,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 PHP_INSTALL_HEADERS([ext/random])
