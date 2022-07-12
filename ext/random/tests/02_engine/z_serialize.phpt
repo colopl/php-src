@@ -33,7 +33,7 @@ foreach ($engines as $engine) {
     for ($i = 0; $i < 1000; $i++) {
         $engine->generate();
     }
-    $engine2 = \unserialize(\serialize($engine));
+    $engine2 = unserialize(serialize($engine));
     for ($i = 0; $i < 5000; $i++) {
         if ($engine->generate() !== $engine2->generate()) {
             $className = $engine::class;

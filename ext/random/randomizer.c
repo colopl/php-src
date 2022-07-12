@@ -174,7 +174,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
 			RETURN_THROWS();			
 		}
-		for (i = 0; i< randomizer->status->last_generated_size; i++) {
+		for (i = 0; i < randomizer->status->last_generated_size; i++) {
 			ZSTR_VAL(retval)[total_size++] = (result >> (i * 8) & 0xff);
 			if (total_size >= required_size) {
 				break;

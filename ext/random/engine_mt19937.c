@@ -43,10 +43,10 @@
 #define hiBit(u)      ((u) & 0x80000000U)  /* mask all but highest   bit of u */
 #define loBit(u)      ((u) & 0x00000001U)  /* mask all but lowest    bit of u */
 #define loBits(u)     ((u) & 0x7FFFFFFFU)  /* mask     the highest   bit of u */
-#define mixBits(u, v) (hiBit(u)|loBits(v)) /* move hi bit of u to hi bit of v */
+#define mixBits(u, v) (hiBit(u) | loBits(v)) /* move hi bit of u to hi bit of v */
 
-#define twist(m,u,v)  (m ^ (mixBits(u,v)>>1) ^ ((uint32_t)(-(int32_t)(loBit(v))) & 0x9908b0dfU))
-#define twist_php(m,u,v)  (m ^ (mixBits(u,v)>>1) ^ ((uint32_t)(-(int32_t)(loBit(u))) & 0x9908b0dfU))
+#define twist(m,u,v)  (m ^ (mixBits(u,v) >> 1) ^ ((uint32_t)(-(int32_t)(loBit(v))) & 0x9908b0dfU))
+#define twist_php(m,u,v)  (m ^ (mixBits(u,v) >> 1) ^ ((uint32_t)(-(int32_t)(loBit(u))) & 0x9908b0dfU))
 
 static inline void mt19937_reload(php_random_status_state_mt19937 *state) {
 	uint32_t *p = state->state;
@@ -81,7 +81,8 @@ static inline void mt19937_seed_state(php_random_status_state_mt19937 *state, ui
 	   only MSBs of the state array.  Modified 9 Jan 2002 by Makoto Matsumoto. */
 	state->state[0] = seed & 0xffffffffU;
 	for (state->count = 1; state->count < MT_N; state->count++) {
-		state->state[state->count] = (1812433253U * (state->state[state->count - 1] ^ (state->state[state->count - 1] >> 30)) + state->count) & 0xffffffffU;
+		uint32_t prev_state = state->state[state->count - 1];
+		state->state[state->count] = (1812433253U * (prev_state  ^ (prev_state  >> 30)) + state->count) & 0xffffffffU;
 	}
 
 	mt19937_reload(state);

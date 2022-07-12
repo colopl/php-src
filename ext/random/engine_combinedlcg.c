@@ -44,7 +44,7 @@
  * 2^31 - 85 and 2^31 - 249. The period of this function
  * is equal to the product of both primes.
  */
-#define MODMULT(a, b, c, m, s) q = s/a;s=b*(s-a*q)-c*q;if(s<0)s+=m
+#define MODMULT(a, b, c, m, s) q = s / a; s = b * (s - a * q) - c * q; if (s < 0) s += m
 
 static void seed(php_random_status *status, uint64_t seed)
 {
