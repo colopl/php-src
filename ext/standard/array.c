@@ -5873,7 +5873,7 @@ PHPAPI bool php_array_pick_keys(const php_random_algo *algo, php_random_status *
 					return true;
 				}
 			} while (true);
-		}		
+		}
 	}
 
 	if (num_req <= 0 || num_req > num_avail) {
