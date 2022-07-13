@@ -98,7 +98,7 @@ static bool unserialize(php_random_status *status, HashTable *data)
 
 	for (i = 0; i < 2; i++) {
 		t = zend_hash_index_find(data, i);
-		if (!t || Z_TYPE_P(t) != IS_STRING || Z_STRLEN_P(t) != 16 /* sizeof(uint64_t) */) {
+		if (!t || Z_TYPE_P(t) != IS_STRING || Z_STRLEN_P(t) != (2 * sizeof(uint64_t))) {
 			return false;
 		}
 		if (!php_random_hex2bin_le(Z_STR_P(t), &u[i])) {

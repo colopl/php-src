@@ -172,7 +172,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 		if (randomizer->status->last_unsafe) {
 			zend_string_free(retval);
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
-			RETURN_THROWS();			
+			RETURN_THROWS();
 		}
 		for (i = 0; i < randomizer->status->last_generated_size; i++) {
 			ZSTR_VAL(retval)[total_size++] = (result >> (i * 8)) & 0xff;
