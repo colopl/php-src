@@ -175,7 +175,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 			RETURN_THROWS();			
 		}
 		for (i = 0; i < randomizer->status->last_generated_size; i++) {
-			ZSTR_VAL(retval)[total_size++] = (result >> (i * 8) & 0xff);
+			ZSTR_VAL(retval)[total_size++] = (result >> (i * 8)) & 0xff;
 			if (total_size >= required_size) {
 				break;
 			}
