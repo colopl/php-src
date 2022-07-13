@@ -127,12 +127,12 @@ static zend_long range(php_random_status *status, zend_long min, zend_long max)
 static bool serialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_xoshiro256starstar *s = status->state;
-	zval z;
+	zval t;
 	uint32_t i;
 
 	for (i = 0; i < 4; i++) {
-		ZVAL_STR(&z, php_random_bin2hex((unsigned char *) &s->state[i], sizeof(uint64_t)));
-		zend_hash_next_index_insert(data, &z);
+		ZVAL_STR(&t, php_random_bin2hex_le(&s->state[i], sizeof(uint64_t)));
+		zend_hash_next_index_insert(data, &t);
 	}
 
 	return true;
@@ -141,16 +141,15 @@ static bool serialize(php_random_status *status, HashTable *data)
 static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_xoshiro256starstar *s = status->state;
-	zval *z;
+	zval *t;
 	uint32_t i;
 
 	for (i = 0; i < 4; i++) {
-		z = zend_hash_index_find(data, i);
-		if (!z || Z_TYPE_P(z) != IS_STRING) {
-			return FAILURE;
+		t = zend_hash_index_find(data, i);
+		if (!t || Z_TYPE_P(t) != IS_STRING) {
+			return false;
 		}
-
-		php_random_hex2bin(Z_STR_P(z), &s->state[i]);
+		php_random_hex2bin_le(Z_STR_P(t), &s->state[i]);
 	}
 
 	return true;

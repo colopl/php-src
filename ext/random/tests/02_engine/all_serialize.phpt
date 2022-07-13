@@ -24,10 +24,10 @@ final class User32 implements \Random\Engine
 }
 
 $engines = [];
-$engine[] = new \Random\Engine\Mt19937(1234);
-$engine[] = new \Random\Engine\PcgOneseq128XslRr64(1234);
-$engine[] = new \User64();
-$engine[] = new \User32();
+$engines[] = new \Random\Engine\Mt19937(1234);
+$engines[] = new \Random\Engine\PcgOneseq128XslRr64(1234);
+$engines[] = new \User64();
+$engines[] = new \User32();
 
 foreach ($engines as $engine) {
     for ($i = 0; $i < 1000; $i++) {

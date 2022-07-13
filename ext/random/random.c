@@ -415,9 +415,9 @@ PHPAPI php_random_status *php_random_default_status(void)
 /* this is read-only, so it's ok */
 ZEND_SET_ALIGNED(16, static const char hexconvtab[]) = "0123456789abcdef";
 
-/* {{{ php_random_bin2hex */
+/* {{{ php_random_bin2hex_le */
 /* stolen from standard/string.c */
-PHPAPI zend_string *php_random_bin2hex(const unsigned char *ptr, const size_t len)
+PHPAPI zend_string *php_random_bin2hex_le(const void *ptr, const size_t len)
 {
 	zend_string *str;
 	zend_long i, j;
@@ -431,8 +431,8 @@ PHPAPI zend_string *php_random_bin2hex(const unsigned char *ptr, const size_t le
 #else
 	for (i = 0; i < len; i++) {
 #endif
-		ZSTR_VAL(str)[j++] = hexconvtab[ptr[i] >> 4];
-		ZSTR_VAL(str)[j++] = hexconvtab[ptr[i] & 15];
+		ZSTR_VAL(str)[j++] = hexconvtab[((unsigned char *) ptr)[i] >> 4];
+		ZSTR_VAL(str)[j++] = hexconvtab[((unsigned char *) ptr)[i] & 15];
 	}
 	ZSTR_VAL(str)[j] = '\0';
 
@@ -440,9 +440,9 @@ PHPAPI zend_string *php_random_bin2hex(const unsigned char *ptr, const size_t le
 }
 /* }}} */
 
-/* {{{ php_random_hex2bin */
+/* {{{ php_random_hex2bin_le */
 /* stolen from standard/string.c */
-PHPAPI void php_random_hex2bin(zend_string *hexstr, void *dest)
+PHPAPI void php_random_hex2bin_le(zend_string *hexstr, void *dest)
 {
 	size_t len = hexstr->len >> 1;
 	zend_long i, j;

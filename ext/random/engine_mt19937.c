@@ -131,17 +131,17 @@ static zend_long range(php_random_status *status, zend_long min, zend_long max)
 static bool serialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_mt19937 *s = status->state;
-	zval tmp;
+	zval t;
 	uint32_t i;
 
 	for (i = 0; i< MT_N; i++) {
-		ZVAL_LONG(&tmp, s->state[i]);
-		zend_hash_next_index_insert(data, &tmp);
+		ZVAL_STR(&t, php_random_bin2hex_le(&s->state[i], sizeof(uint32_t)));
+		zend_hash_next_index_insert(data, &t);
 	}
-	ZVAL_LONG(&tmp, s->count);
-	zend_hash_next_index_insert(data, &tmp);
-	ZVAL_LONG(&tmp, s->mode);
-	zend_hash_next_index_insert(data, &tmp);
+	ZVAL_LONG(&t, s->count);
+	zend_hash_next_index_insert(data, &t);
+	ZVAL_LONG(&t, s->mode);
+	zend_hash_next_index_insert(data, &t);
 	
 	return true;
 }
@@ -149,27 +149,27 @@ static bool serialize(php_random_status *status, HashTable *data)
 static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_mt19937 *s = status->state;
-	zval *tmp;
+	zval *t;
 	uint32_t i;
 
 	for (i = 0; i < MT_N; i++) {
-		tmp = zend_hash_index_find(data, i);
-		if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
+		t = zend_hash_index_find(data, i);
+		if (!t || Z_TYPE_P(t) != IS_STRING) {
 			return false;
 		}
 
-		s->state[i] = Z_LVAL_P(tmp);
+		php_random_hex2bin_le(Z_STR_P(t), &s->state[i]);
 	}
-	tmp = zend_hash_index_find(data, MT_N); 
-	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
+	t = zend_hash_index_find(data, MT_N); 
+	if (!t || Z_TYPE_P(t) != IS_LONG) {
 		return false;
 	}
-	s->count = Z_LVAL_P(tmp);
-	tmp = zend_hash_index_find(data, MT_N + 1);
-	if (!tmp || Z_TYPE_P(tmp) != IS_LONG) {
+	s->count = Z_LVAL_P(t);
+	t = zend_hash_index_find(data, MT_N + 1);
+	if (!t || Z_TYPE_P(t) != IS_LONG) {
 		return false;
 	}
-	s->mode = Z_LVAL_P(tmp);
+	s->mode = Z_LVAL_P(t);
 
 	return true;
 }
