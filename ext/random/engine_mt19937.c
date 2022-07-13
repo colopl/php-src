@@ -223,7 +223,7 @@ PHP_METHOD(Random_Engine_Mt19937, __construct)
 	if (seed_is_null) {
 		/* MT19937 has a very large state, uses CSPRNG for seeding only */
 		if (php_random_bytes_silent(&seed, sizeof(zend_long)) == FAILURE) {
-			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+			zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 			RETURN_THROWS();
 		}
 	}
@@ -246,7 +246,7 @@ PHP_METHOD(Random_Engine_Mt19937, generate)
 	generated = engine->algo->generate(engine->status);
 	size = engine->status->last_generated_size;
 	if (engine->status->last_unsafe) {
-		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+		zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 		RETURN_THROWS();
 	}
 

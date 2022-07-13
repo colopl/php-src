@@ -73,11 +73,11 @@ try {
 
 ?>
 --EXPECTF--
-Random number generate failed
-Random number generate failed
-Random number generate failed
-Random number generate failed
+Random number generation failed
+Random number generation failed
+Random number generation failed
+Random number generation failed
 int(%d)
 string(2) "ff"
-Random number generate failed
-Random number generate failed
+Random number generation failed
+Random number generation failed

@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 137cc46035155a1106a42f15b486b09e596dadc4 */
+ * Stub hash: 995783f78e8fc6071f5b2ca2690c16a1eafe584d */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_lcg_value, 0, 0, IS_DOUBLE, 0)
 ZEND_END_ARG_INFO()
@@ -51,7 +51,7 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Random_Engine_PcgOneseq128XslRr64___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_MASK(0, seed, MAY_BE_STRING|MAY_BE_LONG|MAY_BE_NULL, "null")
-	ZEND_ARG_TYPE_MASK(0, seequence, MAY_BE_STRING|MAY_BE_LONG, "0")
+	ZEND_ARG_TYPE_MASK(0, sequence, MAY_BE_STRING|MAY_BE_LONG, "0")
 ZEND_END_ARG_INFO()
 
 #define arginfo_class_Random_Engine_PcgOneseq128XslRr64_generate arginfo_class_Random_Engine_Mt19937_generate

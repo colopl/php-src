@@ -161,7 +161,7 @@ PHP_METHOD(Random_Engine_PcgOneseq128XslRr64, __construct)
 
 	if (seed_is_null) {
 		if (php_random_bytes_silent(&state->state, sizeof(php_random_uint128_t)) == FAILURE) {
-			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+			zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 			RETURN_THROWS();
 		}
 	} else {

@@ -171,7 +171,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 		result = randomizer->algo->generate(randomizer->status);
 		if (randomizer->status->last_unsafe) {
 			zend_string_free(retval);
-			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+			zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 			RETURN_THROWS();			
 		}
 		for (i = 0; i < randomizer->status->last_generated_size; i++) {
@@ -199,7 +199,7 @@ PHP_METHOD(Random_Randomizer, shuffleArray)
 
 	ZVAL_DUP(return_value, array);
 	if (php_array_data_shuffle(randomizer->algo, randomizer->status, return_value) == FAILURE) {
-		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+		zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 		RETURN_THROWS();
 	}
 }
@@ -221,7 +221,7 @@ PHP_METHOD(Random_Randomizer, shuffleBytes)
 
 	RETVAL_STRINGL(ZSTR_VAL(bytes), ZSTR_LEN(bytes));
 	if (php_string_shuffle(randomizer->algo, randomizer->status, Z_STRVAL_P(return_value), (zend_long) Z_STRLEN_P(return_value)) == FAILURE) {
-		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+		zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 		RETURN_THROWS();
 	}
 }
