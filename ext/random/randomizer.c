@@ -119,7 +119,7 @@ PHP_METHOD(Random_Randomizer, getInt)
 			RETURN_THROWS();
 		}
 		if (randomizer->status->last_unsafe) {
-			zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+			zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 			RETURN_THROWS();
 		}
 		RETURN_LONG((zend_long) (result >> 1));
@@ -137,7 +137,7 @@ PHP_METHOD(Random_Randomizer, getInt)
 
 	result = randomizer->algo->range(randomizer->status, min, max);
 	if (randomizer->status->last_unsafe) {
-		zend_throw_exception(spl_ce_RuntimeException, "Random number generate failed", 0);
+		zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 		RETURN_THROWS();
 	}
 
