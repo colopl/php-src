@@ -10,6 +10,9 @@ PHP                                                                        NEWS
     json_encode(), serialize(), iconv_*(), mb_ereg*(), session_create_id(),
     http_build_query(), strstr(), Reflection*::__toString(). (Arnaud)
 
+- COM:
+  . Fixed bug GH-8750 (Can not create VT_ERROR variant type). (cmb)
+
 - FPM:
   . Added listen.setfib pool option to set route FIB on FreeBSD. (David Carlier)
   . Added access.suppress_path pool option to filter access log entries.
@@ -19,7 +22,7 @@ PHP                                                                        NEWS
   . Updated bundled libpcre to 10.40. (cmb)
 
 - PDO_Firebird:
-  . Fixed GH-8576 (Bad interpretation of length when char is UTF-8). (cmb)
+  . Fixed bug GH-8576 (Bad interpretation of length when char is UTF-8). (cmb)
 
 - Standard:
   . Fixed empty array returned by str_split on empty input. (Michael Vorisek)
