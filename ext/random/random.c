@@ -442,7 +442,7 @@ PHPAPI zend_string *php_random_bin2hex_le(const void *ptr, const size_t len)
 
 /* {{{ php_random_hex2bin_le */
 /* stolen from standard/string.c */
-PHPAPI void php_random_hex2bin_le(zend_string *hexstr, void *dest)
+PHPAPI bool php_random_hex2bin_le(zend_string *hexstr, void *dest)
 {
 	size_t len = hexstr->len >> 1;
 	zend_long i, j;
@@ -465,7 +465,7 @@ PHPAPI void php_random_hex2bin_le(zend_string *hexstr, void *dest)
 		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(unsigned int) - 1)) | is_letter)) {
 			d = (l - 0x10 - 0x27 * is_letter) << 4;
 		} else {
-			return;
+			return false;
 		}
 		c = str[j++];
 		l = c & ~0x20;
@@ -473,10 +473,11 @@ PHPAPI void php_random_hex2bin_le(zend_string *hexstr, void *dest)
 		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(unsigned int) - 1)) | is_letter)) {
 			d |= l - 0x10 - 0x27 * is_letter;
 		} else {
-			return;
+			return false;
 		}
 		ptr[i] = d;
 	}
+	return true;
 }
 /* }}} */
 

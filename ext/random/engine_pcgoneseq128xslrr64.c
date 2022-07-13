@@ -93,15 +93,17 @@ static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_pcgoneseq128xslrr64 *s = status->state;
 	uint64_t u[2];
-	zval *z;
+	zval *t;
 	uint32_t i;
 
 	for (i = 0; i < 2; i++) {
-		z = zend_hash_index_find(data, i);
-		if (!z || Z_TYPE_P(z) != IS_STRING) {
+		t = zend_hash_index_find(data, i);
+		if (!t || Z_TYPE_P(t) != IS_STRING | Z_STRLEN_P(t) != 16 /* sizeof(uint64_t) */) {
 			return false;
 		}
-		php_random_hex2bin_le(Z_STR_P(z), &u[i]);
+		if (!php_random_hex2bin_le(Z_STR_P(t), &u[i])) {
+			return false;
+		}
 	}
 	s->state = php_random_uint128_constant(u[0], u[1]);
 

@@ -154,11 +154,12 @@ static bool unserialize(php_random_status *status, HashTable *data)
 
 	for (i = 0; i < MT_N; i++) {
 		t = zend_hash_index_find(data, i);
-		if (!t || Z_TYPE_P(t) != IS_STRING) {
+		if (!t || Z_TYPE_P(t) != IS_STRING || Z_STRLEN_P(t) != 8 /* sizeof(uint32_t) */) {
 			return false;
 		}
-
-		php_random_hex2bin_le(Z_STR_P(t), &s->state[i]);
+		if (!php_random_hex2bin_le(Z_STR_P(t), &s->state[i])) {
+			return false;
+		}
 	}
 	t = zend_hash_index_find(data, MT_N); 
 	if (!t || Z_TYPE_P(t) != IS_LONG) {

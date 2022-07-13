@@ -146,10 +146,12 @@ static bool unserialize(php_random_status *status, HashTable *data)
 
 	for (i = 0; i < 4; i++) {
 		t = zend_hash_index_find(data, i);
-		if (!t || Z_TYPE_P(t) != IS_STRING) {
+		if (!t || Z_TYPE_P(t) != IS_STRING || Z_STRLEN_P(t) != 16 /* sizeof(uint64_t) */) {
 			return false;
 		}
-		php_random_hex2bin_le(Z_STR_P(t), &s->state[i]);
+		if (!php_random_hex2bin_le(Z_STR_P(t), &s->state[i])) {
+			return false;
+		}
 	}
 
 	return true;
