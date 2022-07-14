@@ -17,4 +17,3 @@ PHP_NEW_EXTENSION(random,
       randomizer.c,
       no,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 PHP_INSTALL_HEADERS([ext/random], [php_random.h])
-PHP_ADD_MAKEFILE_FRAGMENT()
