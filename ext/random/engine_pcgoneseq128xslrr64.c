@@ -38,7 +38,8 @@
 #include "ext/spl/spl_exceptions.h"
 #include "Zend/zend_exceptions.h"
 
-static inline void step(php_random_status_state_pcgoneseq128xslrr64 *s) {
+static inline void step(php_random_status_state_pcgoneseq128xslrr64 *s)
+{
 	s->state = php_random_uint128_add(
 		php_random_uint128_multiply(s->state, php_random_uint128_constant(2549297995355413924ULL,4865540595714422341ULL)),
 		php_random_uint128_constant(6364136223846793005ULL,1442695040888963407ULL)
