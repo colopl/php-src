@@ -427,9 +427,9 @@ PHPAPI zend_string *php_random_bin2hex_le(const void *ptr, const size_t len)
 	i = 0;
 #ifdef WORDS_BIGENDIAN
 	/* force little endian */
-	for (size_t j = (len - 1); 0 <= j; j--) {
+	for (zend_long j = (len - 1); 0 <= j; j--) {
 #else
-	for (size_t j = 0; j < len; j++) {
+	for (zend_long j = 0; j < len; j++) {
 #endif
 		ZSTR_VAL(str)[i++] = hexconvtab[((unsigned char *) ptr)[j] >> 4];
 		ZSTR_VAL(str)[i++] = hexconvtab[((unsigned char *) ptr)[j] & 15];
@@ -444,17 +444,16 @@ PHPAPI zend_string *php_random_bin2hex_le(const void *ptr, const size_t len)
 /* stolen from standard/string.c */
 PHPAPI bool php_random_hex2bin_le(zend_string *hexstr, void *dest)
 {
-	size_t len = hexstr->len >> 1, i;
+	size_t len = hexstr->len >> 1;
 	unsigned char *str = (unsigned char *) hexstr->val, c, l, d;
 	unsigned char *ptr = (unsigned char *) dest;
-	int is_letter;
+	int is_letter, i = 0;
 
-	i = 0;
 #ifdef WORDS_BIGENDIAN
 	/* force little endian */
-	for (size_t j = (len - 1); 0 <= j; j--) {
+	for (zend_long j = (len - 1); 0 <= j; j--) {
 #else
-	for (size_t j = 0; j < len; j++) {
+	for (zend_long j = 0; j < len; j++) {
 #endif
 		c = str[i++];
 		l = c & ~0x20;
