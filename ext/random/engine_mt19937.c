@@ -166,7 +166,7 @@ static bool unserialize(php_random_status *status, HashTable *data)
 		return false;
 	}
 	s->count = Z_LVAL_P(t);
-	if (s->count < 0 || s->count > MT_N) {
+	if (s->count > MT_N) {
 		return false;
 	}
 
