@@ -79,9 +79,8 @@ static bool serialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_combinedlcg *s = status->state;
 	zval t;
-	uint32_t i;
 
-	for (i = 0; i < 2; i++) {
+	for (uint32_t i = 0; i < 2; i++) {
 		ZVAL_STR(&t, php_random_bin2hex_le(&s->state[i], sizeof(uint32_t)));
 		zend_hash_next_index_insert(data, &t);
 	}
@@ -93,9 +92,8 @@ static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_combinedlcg *s = status->state;
 	zval *t;
-	uint32_t i;
 
-	for (i = 0; i < 2; i++) {
+	for (uint32_t i = 0; i < 2; i++) {
 		t = zend_hash_index_find(data, i);
 		if (!t || Z_TYPE_P(t) != IS_STRING || Z_STRLEN_P(t) != (2 * sizeof(uint32_t))) {
 			return false;

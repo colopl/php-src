@@ -71,10 +71,9 @@ static inline uint64_t generate_state(php_random_status_state_xoshiro256starstar
 static inline void jump(php_random_status_state_xoshiro256starstar *state, const uint64_t *jmp)
 {
 	uint64_t s0 = 0, s1 = 0, s2 = 0, s3 = 0;
-	uint32_t i, j;
 
-	for (i = 0; i < 4; i++) {
-		for (j = 0; j < 64; j++) {
+	for (uint32_t i = 0; i < 4; i++) {
+		for (uint32_t j = 0; j < 64; j++) {
 			if (jmp[i] & 1ULL << j) {
 				s0 ^= state->state[0];
 				s1 ^= state->state[1];
@@ -128,9 +127,8 @@ static bool serialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_xoshiro256starstar *s = status->state;
 	zval t;
-	uint32_t i;
 
-	for (i = 0; i < 4; i++) {
+	for (uint32_t i = 0; i < 4; i++) {
 		ZVAL_STR(&t, php_random_bin2hex_le(&s->state[i], sizeof(uint64_t)));
 		zend_hash_next_index_insert(data, &t);
 	}
@@ -142,9 +140,8 @@ static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_xoshiro256starstar *s = status->state;
 	zval *t;
-	uint32_t i;
 
-	for (i = 0; i < 4; i++) {
+	for (uint32_t i = 0; i < 4; i++) {
 		t = zend_hash_index_find(data, i);
 		if (!t || Z_TYPE_P(t) != IS_STRING || Z_STRLEN_P(t) != (2 * sizeof(uint64_t))) {
 			return false;
@@ -213,8 +210,6 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 	zend_string *str_seed = NULL;
 	zend_long int_seed = 0;
 	bool seed_is_null = true;
-	uint32_t i, j;
-	uint64_t t[4];
 
 	ZEND_PARSE_PARAMETERS_START(0, 1)
 		Z_PARAM_OPTIONAL;
@@ -230,10 +225,12 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 		if (str_seed) {
 			/* char (byte: 8 bit) * 32 = 256 bits */
 			if (ZSTR_LEN(str_seed) == 32) {
+				uint64_t t[4];
+				
 				/* Endianness safe copy */
-				for (i = 0; i < 4; i++) {
+				for (uint32_t i = 0; i < 4; i++) {
 					t[i] = 0;
-					for (j = 0; j < 8; j++) {
+					for (uint32_t j = 0; j < 8; j++) {
 						t[i] += ((uint64_t) (unsigned char) ZSTR_VAL(str_seed)[(i * 8) + j]) << (j * 8);
 					}
 				}

@@ -420,21 +420,21 @@ ZEND_SET_ALIGNED(16, static const char hexconvtab[]) = "0123456789abcdef";
 PHPAPI zend_string *php_random_bin2hex_le(const void *ptr, const size_t len)
 {
 	zend_string *str;
-	zend_long i, j;
+	size_t i;
 
 	str = zend_string_safe_alloc(len, 2 * sizeof(char), 0, 0);
 
-	j = 0;
+	i = 0;
 #ifdef WORDS_BIGENDIAN
 	/* force little endian */
-	for (i = (len - 1); 0 <= i; i--) {
+	for (size_t j = (len - 1); 0 <= j; j--) {
 #else
-	for (i = 0; i < len; i++) {
+	for (size_t j = 0; j < len; j++) {
 #endif
-		ZSTR_VAL(str)[j++] = hexconvtab[((unsigned char *) ptr)[i] >> 4];
-		ZSTR_VAL(str)[j++] = hexconvtab[((unsigned char *) ptr)[i] & 15];
+		ZSTR_VAL(str)[i++] = hexconvtab[((unsigned char *) ptr)[j] >> 4];
+		ZSTR_VAL(str)[i++] = hexconvtab[((unsigned char *) ptr)[j] & 15];
 	}
-	ZSTR_VAL(str)[j] = '\0';
+	ZSTR_VAL(str)[i] = '\0';
 
 	return str;
 }
@@ -444,38 +444,37 @@ PHPAPI zend_string *php_random_bin2hex_le(const void *ptr, const size_t len)
 /* stolen from standard/string.c */
 PHPAPI bool php_random_hex2bin_le(zend_string *hexstr, void *dest)
 {
-	size_t len = hexstr->len >> 1;
-	zend_long i, j;
+	size_t len = hexstr->len >> 1, i;
 	unsigned char *str = (unsigned char *) hexstr->val, c, l, d;
 	unsigned char *ptr = (unsigned char *) dest;
 	int is_letter;
 
-	j = 0;
+	i = 0;
 #ifdef WORDS_BIGENDIAN
 	/* force little endian */
-	for (i = (len - 1); 0 <= i; i--) {
+	for (size_t j = (len - 1); 0 <= j; j--) {
 #else
-	for (i = 0; i < len; i++) {
+	for (size_t j = 0; j < len; j++) {
 #endif
-		c = str[j++];
+		c = str[i++];
 		l = c & ~0x20;
-		is_letter = ((unsigned int) ((l - 'A') ^ (l - 'F' - 1))) >> (8 * sizeof(unsigned int) - 1);
+		is_letter = ((uint32_t) ((l - 'A') ^ (l - 'F' - 1))) >> (8 * sizeof(uint32_t) - 1);
 
 		/* basically (c >= '0' && c <= '9') || (l >= 'A' && l <= 'F') */
-		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(unsigned int) - 1)) | is_letter)) {
+		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(uint32_t) - 1)) | is_letter)) {
 			d = (l - 0x10 - 0x27 * is_letter) << 4;
 		} else {
 			return false;
 		}
-		c = str[j++];
+		c = str[i++];
 		l = c & ~0x20;
-		is_letter = ((unsigned int) ((l - 'A') ^ (l - 'F' - 1))) >> (8 * sizeof(unsigned int) - 1);
-		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(unsigned int) - 1)) | is_letter)) {
+		is_letter = ((uint32_t) ((l - 'A') ^ (l - 'F' - 1))) >> (8 * sizeof(uint32_t) - 1);
+		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(uint32_t) - 1)) | is_letter)) {
 			d |= l - 0x10 - 0x27 * is_letter;
 		} else {
 			return false;
 		}
-		ptr[i] = d;
+		ptr[j] = d;
 	}
 	return true;
 }

@@ -153,7 +153,6 @@ PHP_METHOD(Random_Randomizer, getBytes)
 	zend_long length;
 	uint64_t result;
 	size_t total_size = 0, required_size;
-	uint32_t i;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_LONG(length)
@@ -174,7 +173,7 @@ PHP_METHOD(Random_Randomizer, getBytes)
 			zend_throw_exception(spl_ce_RuntimeException, "Random number generation failed", 0);
 			RETURN_THROWS();
 		}
-		for (i = 0; i < randomizer->status->last_generated_size; i++) {
+		for (size_t i = 0; i < randomizer->status->last_generated_size; i++) {
 			ZSTR_VAL(retval)[total_size++] = (result >> (i * 8)) & 0xff;
 			if (total_size >= required_size) {
 				break;

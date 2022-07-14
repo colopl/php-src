@@ -50,21 +50,20 @@
 
 static inline void mt19937_reload(php_random_status_state_mt19937 *state) {
 	uint32_t *p = state->state;
-	int i;
 
 	if (state->mode == MT_RAND_MT19937) {
-		for (i = N - M; i--; ++p) {
+		for (uint32_t i = N - M; i--; ++p) {
 			*p = twist(p[M], p[0], p[1]);
 		}
-		for (i = M; --i; ++p) {
+		for (uint32_t i = M; --i; ++p) {
 			*p = twist(p[M-N], p[0], p[1]);
 		}
 		*p = twist(p[M-N], p[0], state->state[0]);
 	} else {
-		for (i = N - M; i--; ++p) {
+		for (uint32_t i = N - M; i--; ++p) {
 			*p = twist_php(p[M], p[0], p[1]);
 		}
-		for (i = M; --i; ++p) {
+		for (uint32_t i = M; --i; ++p) {
 			*p = twist_php(p[M-N], p[0], p[1]);
 		}
 		*p = twist_php(p[M-N], p[0], state->state[0]);
@@ -132,9 +131,8 @@ static bool serialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_mt19937 *s = status->state;
 	zval t;
-	uint32_t i;
 
-	for (i = 0; i< MT_N; i++) {
+	for (uint32_t i = 0; i < MT_N; i++) {
 		ZVAL_STR(&t, php_random_bin2hex_le(&s->state[i], sizeof(uint32_t)));
 		zend_hash_next_index_insert(data, &t);
 	}
@@ -150,9 +148,8 @@ static bool unserialize(php_random_status *status, HashTable *data)
 {
 	php_random_status_state_mt19937 *s = status->state;
 	zval *t;
-	uint32_t i;
 
-	for (i = 0; i < MT_N; i++) {
+	for (uint32_t i = 0; i < MT_N; i++) {
 		t = zend_hash_index_find(data, i);
 		if (!t || Z_TYPE_P(t) != IS_STRING || Z_STRLEN_P(t) != (2 * sizeof(uint32_t))) {
 			return false;
@@ -246,7 +243,6 @@ PHP_METHOD(Random_Engine_Mt19937, generate)
 	uint64_t generated;
 	size_t size;
 	zend_string *bytes;
-	int i;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
@@ -260,7 +256,7 @@ PHP_METHOD(Random_Engine_Mt19937, generate)
 	bytes = zend_string_alloc(size, false);
 
 	/* Endianness safe copy */
-	for (i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++) {
 		ZSTR_VAL(bytes)[i] = (generated >> (i * 8)) & 0xff;
 	}
 	ZSTR_VAL(bytes)[size] = '\0';

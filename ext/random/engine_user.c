@@ -41,7 +41,6 @@ static uint64_t generate(php_random_status *status)
 	uint64_t result = 0;
 	size_t size;
 	zval retval;
-	uint32_t i;
 
 	zend_call_known_instance_method_with_0_params(s->generate_method, s->object, &retval);
 
@@ -56,7 +55,7 @@ static uint64_t generate(php_random_status *status)
 
 	if (size > 0) {
 		/* Endianness safe copy */
-		for (i = 0; i < size; i++) {
+		for (size_t i = 0; i < size; i++) {
 			result += ((uint64_t) (unsigned char) Z_STRVAL(retval)[i]) << (8 * i);
 		}
 	} else {
