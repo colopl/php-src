@@ -166,11 +166,18 @@ static bool unserialize(php_random_status *status, HashTable *data)
 		return false;
 	}
 	s->count = Z_LVAL_P(t);
+	if (s->count < 0 || s->count > MT_N) {
+		return false;
+	}
+
 	t = zend_hash_index_find(data, MT_N + 1);
 	if (!t || Z_TYPE_P(t) != IS_LONG) {
 		return false;
 	}
 	s->mode = Z_LVAL_P(t);
+	if (s->mode != MT_RAND_MT19937 && s->mode != MT_RAND_PHP) {
+		return false;
+	}
 
 	return true;
 }
