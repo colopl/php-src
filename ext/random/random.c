@@ -486,7 +486,7 @@ PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw)
 #else
 	size_t read_bytes = 0;
 	ssize_t n;
-#if (defined(__linux__) && defined(SYS_getrandom)) || (defined(__FreeBSD__) && __FreeBSD_version >= 1200000) || (defined(__DragonFly__) && __DragonFly_version >= 500700) || defined(__sun)
+# if (defined(__linux__) && defined(SYS_getrandom)) || (defined(__FreeBSD__) && __FreeBSD_version >= 1200000) || (defined(__DragonFly__) && __DragonFly_version >= 500700) || defined(__sun)
 	/* Linux getrandom(2) syscall or FreeBSD/DragonFlyBSD getrandom(2) function*/
 	/* Keep reading until we get enough entropy */
 	while (read_bytes < size) {
@@ -499,11 +499,11 @@ PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw)
 		              amount_to_read
 		*/
 		size_t amount_to_read = size - read_bytes;
-#if defined(__linux__)
+#  if defined(__linux__)
 		n = syscall(SYS_getrandom, bytes + read_bytes, amount_to_read, 0);
-#else
+#  else
 		n = getrandom(bytes + read_bytes, amount_to_read, 0);
-#endif
+#  endif
 
 		if (n == -1) {
 			if (errno == ENOSYS) {
@@ -521,21 +521,21 @@ PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw)
 			}
 		}
 
-#if __has_feature(memory_sanitizer)
+#  if __has_feature(memory_sanitizer)
 		/* MSan does not instrument manual syscall invocations. */
 		__msan_unpoison(bytes + read_bytes, n);
-#endif
+#  endif
 		read_bytes += (size_t) n;
 	}
-#endif
+# endif
 	if (read_bytes < size) {
 		int    fd = RANDOM_G(random_fd);
 		struct stat st;
 
 		if (fd < 0) {
-#if HAVE_DEV_URANDOM
+# if HAVE_DEV_URANDOM
 			fd = open("/dev/urandom", O_RDONLY);
-#endif
+# endif
 			if (fd < 0) {
 				if (should_throw) {
 					zend_throw_exception(zend_ce_exception, "Cannot open source device", 0);
