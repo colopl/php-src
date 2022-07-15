@@ -844,6 +844,7 @@ PHP_MSHUTDOWN_FUNCTION(random)
 
 	php_random_status_free(RANDOM_G(combined_lcg), true);
 	RANDOM_G(combined_lcg) = NULL;
+	
 	php_random_status_free(RANDOM_G(mt19937), true);
 	RANDOM_G(mt19937) = NULL;
 
@@ -857,6 +858,9 @@ PHP_RINIT_FUNCTION(random)
 #if defined(ZTS) && defined(COMPILE_DL_RANDOM)
 	ZEND_TSRMLS_CACHE_UPDATE();
 #endif
+
+	RANDOM_G(combined_lcg_seeded) = false;
+	RANDOM_G(mt19937_seeded) = false;
 
 	return SUCCESS;
 }
