@@ -37,7 +37,8 @@ static inline uint64_t splitmix64(uint64_t *seed)
 	return (r ^ (r >> 31));
 }
 
-static inline uint64_t rotl(const uint64_t x, int k) {
+static inline uint64_t rotl(const uint64_t x, int k)
+{
 	return (x << k) | (x >> (64 - k));
 }
 
