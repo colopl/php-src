@@ -11,6 +11,8 @@ PHP                                                                        NEWS
   . Reduced the memory footprint of strings returned by var_export(),
     json_encode(), serialize(), iconv_*(), mb_ereg*(), session_create_id(),
     http_build_query(), strstr(), Reflection*::__toString(). (Arnaud)
+  . Fixed bug GH-8995 (WeakMap object reference offset causing TypeError).
+    (Tobias Bachert)
 
 - COM:
   . Fixed bug GH-8750 (Can not create VT_ERROR variant type). (cmb)
@@ -30,6 +32,9 @@ PHP                                                                        NEWS
   . Fixed empty array returned by str_split on empty input. (Michael Vorisek)
   . Added ini_parse_quantity function to convert ini quantities shorthand
     notation to int. (Dennis Snell)
+  . Enable arc4random_buf for Linux glibc 2.36 and onwards
+    for the random_bytes. (Cristian Rodriguez)
+  . Uses CCRandomGenerateBytes instead of arc4random_buf on macOs. (David Carlier).
 
 07 Jul 2022, PHP 8.2.0alpha3
 
