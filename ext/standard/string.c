@@ -5737,7 +5737,8 @@ PHP_FUNCTION(str_rot13)
 }
 /* }}} */
 
-PHPAPI int php_binary_string_shuffle(const php_random_algo *algo, php_random_status *status, char *str, zend_long len) /* {{{ */
+/* {{{ php_binary_string_shuffle */
+PHPAPI bool php_binary_string_shuffle(const php_random_algo *algo, php_random_status *status, char *str, zend_long len) /* {{{ */
 {
 	int64_t n_elems, rnd_idx, n_left;
 	char temp;
@@ -5747,7 +5748,7 @@ PHPAPI int php_binary_string_shuffle(const php_random_algo *algo, php_random_sta
 	n_elems = len;
 
 	if (n_elems <= 1) {
-		return SUCCESS;
+		return true;
 	}
 
 	n_left = n_elems;
@@ -5755,7 +5756,7 @@ PHPAPI int php_binary_string_shuffle(const php_random_algo *algo, php_random_sta
 	while (--n_left) {
 		rnd_idx = algo->range(status, 0, n_left);
 		if (status->last_unsafe) {
-			return FAILURE;
+			return false;
 		}
 		if (rnd_idx != n_left) {
 			temp = str[n_left];
@@ -5764,7 +5765,7 @@ PHPAPI int php_binary_string_shuffle(const php_random_algo *algo, php_random_sta
 		}
 	}
 
-	return SUCCESS;
+	return true;
 }
 /* }}} */
 
