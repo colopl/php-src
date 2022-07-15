@@ -80,11 +80,11 @@ static bool serialize(php_random_status *status, HashTable *data)
 	zval z;
 
 	u = php_random_uint128_hi(s->state);
-	ZVAL_STR(&z, php_random_bin2hex_le((unsigned char *) &u, sizeof(uint64_t)));
+	ZVAL_STR(&z, php_random_bin2hex_le(&u, sizeof(uint64_t)));
 	zend_hash_next_index_insert(data, &z);
 	
 	u = php_random_uint128_lo(s->state);
-	ZVAL_STR(&z, php_random_bin2hex_le((unsigned char *) &u, sizeof(uint64_t)));
+	ZVAL_STR(&z, php_random_bin2hex_le(&u, sizeof(uint64_t)));
 	zend_hash_next_index_insert(data, &z);
 
 	return true;

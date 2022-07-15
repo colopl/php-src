@@ -38,7 +38,8 @@
 #include "ext/spl/spl_exceptions.h"
 #include "Zend/zend_exceptions.h"
 
-static inline uint64_t splitmix64(uint64_t *seed) {
+static inline uint64_t splitmix64(uint64_t *seed)
+{
 	uint64_t r;
 
 	r = (*seed += 0x9e3779b97f4a7c15ULL);
@@ -180,8 +181,7 @@ PHPAPI void php_random_xoshiro256starstar_jump_long(php_random_status_state_xosh
 PHP_METHOD(Random_Engine_Xoshiro256StarStar, jump)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_status *status = engine->status;
-	php_random_status_state_xoshiro256starstar *state = status->state;
+	php_random_status_state_xoshiro256starstar *state = engine->status->state;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
@@ -193,8 +193,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, jump)
 PHP_METHOD(Random_Engine_Xoshiro256StarStar, jumpLong)
 {
 	php_random_engine *engine = Z_RANDOM_ENGINE_P(ZEND_THIS);
-	php_random_status *status = engine->status;
-	php_random_status_state_xoshiro256starstar *state = status->state;
+	php_random_status_state_xoshiro256starstar *state = engine->status->state;
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
