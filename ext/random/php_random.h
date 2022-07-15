@@ -281,9 +281,9 @@ static inline php_random_randomizer *php_random_randomizer_from_obj(zend_object 
 
 # define Z_RANDOM_RANDOMIZER_P(zval) php_random_randomizer_from_obj(Z_OBJ_P(zval));
 
-PHPAPI php_random_status *php_random_status_allocate(const php_random_algo *algo);
+PHPAPI php_random_status *php_random_status_alloc(const php_random_algo *algo, const bool persistent);
 PHPAPI php_random_status *php_random_status_copy(const php_random_algo *algo, php_random_status *old_status, php_random_status *new_status);
-PHPAPI void php_random_status_free(php_random_status *status);
+PHPAPI void php_random_status_free(php_random_status *status, const bool persistent);
 PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, zend_object_handlers *handlers, const php_random_algo *algo);
 PHPAPI void php_random_engine_common_free_object(zend_object *object);
 PHPAPI zend_object *php_random_engine_common_clone_object(zend_object *object);
@@ -309,11 +309,12 @@ extern zend_module_entry random_module_entry;
 PHP_MINIT_FUNCTION(random);
 PHP_MSHUTDOWN_FUNCTION(random);
 PHP_RINIT_FUNCTION(random);
-PHP_RSHUTDOWN_FUNCTION(random);
 
 ZEND_BEGIN_MODULE_GLOBALS(random)
 	php_random_status *combined_lcg;
+	bool combined_lcg_seeded;
 	php_random_status *mt19937;
+	bool mt19937_seeded;
 	int random_fd;
 ZEND_END_MODULE_GLOBALS(random)
 

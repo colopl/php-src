@@ -51,7 +51,7 @@ static inline void randomizer_common_init(php_random_randomizer *randomizer, zen
 		randomizer->status = engine->status;
 	} else {
 		/* Self allocation */
-		randomizer->status = php_random_status_allocate(&php_random_algo_user);
+		randomizer->status = php_random_status_alloc(&php_random_algo_user, false);
 		php_random_status_state_user *state = randomizer->status->state;
 		zend_string *mname;
 		zend_function *generate_method;

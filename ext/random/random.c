@@ -303,19 +303,19 @@ static void randomizer_free_obj(zend_object *object) {
 	php_random_randomizer *randomizer = php_random_randomizer_from_obj(object);
 
 	if (randomizer->is_userland_algo && randomizer->status) {
-		php_random_status_free(randomizer->status);
+		php_random_status_free(randomizer->status, false);
 	}
 
 	zend_object_std_dtor(&randomizer->std);
 }
 
-PHPAPI php_random_status *php_random_status_allocate(const php_random_algo *algo)
+PHPAPI php_random_status *php_random_status_alloc(const php_random_algo *algo, const bool persistent)
 {
-	php_random_status *status = ecalloc(1, sizeof(php_random_status));
+	php_random_status *status = pecalloc(1, sizeof(php_random_status), persistent);
 
 	status->last_generated_size = algo->generate_size;
 	status->last_unsafe = false;
-	status->state = algo->state_size > 0 ? ecalloc(1, algo->state_size) : NULL;
+	status->state = algo->state_size > 0 ? pecalloc(1, algo->state_size, persistent) : NULL;
 
 	return status;
 }
@@ -329,12 +329,12 @@ PHPAPI php_random_status *php_random_status_copy(const php_random_algo *algo, ph
 	return new_status;
 }
 
-PHPAPI void php_random_status_free(php_random_status *status)
+PHPAPI void php_random_status_free(php_random_status *status, const bool persistent)
 {
 	if (status->state) {
-		efree(status->state);
+		pefree(status->state, persistent);
 	}
-	efree(status);
+	pefree(status, persistent);
 }
 
 PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, zend_object_handlers *handlers, const php_random_algo *algo)
@@ -345,7 +345,7 @@ PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, ze
 	object_properties_init(&engine->std, ce);
 
 	engine->algo = algo;
-	engine->status = php_random_status_allocate(engine->algo);
+	engine->status = php_random_status_alloc(engine->algo, false);
 	engine->std.handlers = handlers;
 
 	return engine;
@@ -356,7 +356,7 @@ PHPAPI void php_random_engine_common_free_object(zend_object *object)
 	php_random_engine *engine = php_random_engine_from_obj(object);
 
 	if (engine->status) {
-		php_random_status_free(engine->status);
+		php_random_status_free(engine->status, false);
 	}
 
 	zend_object_std_dtor(object);
@@ -402,13 +402,12 @@ PHPAPI php_random_status *php_random_default_status(void)
 {
 	php_random_status *status = RANDOM_G(mt19937);
 
-	if (!status) {
-		status = php_random_status_allocate(&php_random_algo_mt19937);
+	if (!RANDOM_G(mt19937_seeded)) {
 		php_random_mt19937_seed_default(status->state);
-		RANDOM_G(mt19937) = status;
+		RANDOM_G(mt19937_seeded) = true;
 	}
 
-	return RANDOM_G(mt19937);
+	return status;
 }
 /* }}} */
 
@@ -484,10 +483,9 @@ PHPAPI double php_combined_lcg(void)
 {
 	php_random_status *status = RANDOM_G(combined_lcg);
 
-	if (!status) {
-		status = php_random_status_allocate(&php_random_algo_combinedlcg);
+	if (!RANDOM_G(combined_lcg_seeded)) {
 		php_random_combinedlcg_seed_default(status->state);
-		RANDOM_G(combined_lcg) = status;
+		RANDOM_G(combined_lcg_seeded) = true;
 	}
 
 	return php_random_algo_combinedlcg.generate(status) * 4.656613e-10;
@@ -706,15 +704,7 @@ PHP_FUNCTION(mt_srand)
 	zend_long seed = 0;
 	zend_long mode = MT_RAND_MT19937;
 	php_random_status *status = RANDOM_G(mt19937);
-	php_random_status_state_mt19937 *state;
-
-	if (!status) {
-		status = php_random_status_allocate(&php_random_algo_mt19937);
-		php_random_mt19937_seed_default(status->state);
-		RANDOM_G(mt19937) = status;
-	}
-
-	state = status->state;
+	php_random_status_state_mt19937 *state = status->state;
 
 	ZEND_PARSE_PARAMETERS_START(0, 2)
 		Z_PARAM_OPTIONAL
@@ -729,6 +719,7 @@ PHP_FUNCTION(mt_srand)
 	} else {
 		php_random_algo_mt19937.seed(status, (uint64_t) seed);
 	}
+	RANDOM_G(mt19937_seeded) = true;
 }
 /* }}} */
 
@@ -899,8 +890,11 @@ PHP_MINIT_FUNCTION(random)
 
 	RANDOM_G(random_fd) = -1;
 
-	RANDOM_G(combined_lcg) = NULL;
-	RANDOM_G(mt19937) = NULL;
+	RANDOM_G(combined_lcg) = php_random_status_alloc(&php_random_algo_combinedlcg, true);
+	RANDOM_G(combined_lcg_seeded) = false;
+
+	RANDOM_G(mt19937) = php_random_status_alloc(&php_random_algo_mt19937, true);
+	RANDOM_G(mt19937_seeded) = false;
 	
 	return SUCCESS;
 }
@@ -914,21 +908,9 @@ PHP_MSHUTDOWN_FUNCTION(random)
 		RANDOM_G(random_fd) = -1;
 	}
 
-	return SUCCESS;
-}
-/* }}} */
-
-/* {{{ PHP_RSHUTDOWN_FUNCTION */
-PHP_RSHUTDOWN_FUNCTION(random)
-{
-	if (RANDOM_G(combined_lcg)) {
-		php_random_status_free(RANDOM_G(combined_lcg));
-	}
+	php_random_status_free(RANDOM_G(combined_lcg), true);
 	RANDOM_G(combined_lcg) = NULL;
-
-	if (RANDOM_G(mt19937)) {
-		php_random_status_free(RANDOM_G(mt19937));
-	}
+	php_random_status_free(RANDOM_G(mt19937), true);
 	RANDOM_G(mt19937) = NULL;
 
 	return SUCCESS;
@@ -954,7 +936,7 @@ zend_module_entry random_module_entry = {
 	PHP_MINIT(random),			/* PHP_MINIT - Module initialization */
 	PHP_MSHUTDOWN(random),		/* PHP_MSHUTDOWN - Module shutdown */
 	PHP_RINIT(random),			/* PHP_RINIT - Request initialization */
-	PHP_RSHUTDOWN(random),		/* PHP_RSHUTDOWN - Request shutdown */
+	NULL,						/* PHP_RSHUTDOWN - Request shutdown */
 	NULL,						/* PHP_MINFO - Module info */
 	PHP_VERSION,				/* Version */
 	PHP_MODULE_GLOBALS(random),	/* ZTS Module globals */
