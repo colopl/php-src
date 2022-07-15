@@ -10,21 +10,8 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Rasmus Lerdorf <rasmus@php.net>                             |
-   |          Zeev Suraski <zeev@php.net>                                 |
-   |          Sascha Schumann <sascha@schumann.cx>                        |
-   |          Pedro Melo <melo@ip.pt>                                     |
-   |          Sterling Hughes <sterling@php.net>                          |
-   |          Sammy Kaye Powers <me@sammyk.me>                            |
+   | Authors: Sammy Kaye Powers <me@sammyk.me>                            |
    |          Go Kudo <g-kudo@colopl.co.jp>                               |
-   |                                                                      |
-   | Based on code from: Richard J. Wagner <rjwagner@writeme.com>         |
-   |                     Makoto Matsumoto <matumoto@math.keio.ac.jp>      |
-   |                     Takuji Nishimura                                 |
-   |                     Shawn Cokus <Cokus@math.washington.edu>          |
-   |                     David Blackman                                   |
-   |                     Sebastiano Vigna <vigna@acm.org>                 |
-   |                     Melissa O'Neill <oneill@pcg-random.org>          |
    +----------------------------------------------------------------------+
 */
 
