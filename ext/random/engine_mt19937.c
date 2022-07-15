@@ -266,11 +266,15 @@ PHP_METHOD(Random_Engine_Mt19937, __construct)
 	ZEND_PARSE_PARAMETERS_END();
 
 	switch (mode) {
+		case MT_RAND_MT19937:
+			state->mode = MT_RAND_MT19937;
+			break;
 		case MT_RAND_PHP:
 			state->mode = MT_RAND_PHP;
 			break;
 		default:
-			state->mode = MT_RAND_MT19937;
+			zend_argument_error(spl_ce_InvalidArgumentException, 2, "mode must be MT_RAND_MT19937 or MT_RAND_PHP");
+			RETURN_THROWS();
 	}
 
 	if (seed_is_null) {
