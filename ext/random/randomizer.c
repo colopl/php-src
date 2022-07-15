@@ -64,7 +64,6 @@ PHP_METHOD(Random_Randomizer, __construct)
 	php_random_randomizer *randomizer = Z_RANDOM_RANDOMIZER_P(ZEND_THIS);
 	zend_object *engine_object = NULL;
 	zval zengine_object;
-	zend_string *pname;
 
 	ZEND_PARSE_PARAMETERS_START(0, 1)
 		Z_PARAM_OPTIONAL
@@ -81,10 +80,7 @@ PHP_METHOD(Random_Randomizer, __construct)
 
 	ZVAL_OBJ(&zengine_object, engine_object);
 
-	/* Write property */
-	pname = zend_string_init("engine", sizeof("engine") - 1, 0);
-	zend_std_write_property(&randomizer->std, pname, &zengine_object, NULL);
-	zend_string_release(pname);
+	zend_update_property(random_ce_Random_Randomizer, Z_OBJ_P(ZEND_THIS), "engine", strlen("engine"), &zengine_object);
 
 	randomizer_common_init(randomizer, engine_object);
 }
