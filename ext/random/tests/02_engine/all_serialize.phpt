@@ -26,6 +26,7 @@ final class User32 implements \Random\Engine
 $engines = [];
 $engines[] = new \Random\Engine\Mt19937(1234);
 $engines[] = new \Random\Engine\PcgOneseq128XslRr64(1234);
+$engines[] = new \Random\Engine\Xoshiro256StarStar(1234);
 if (\PHP_INT_SIZE >= 8) {
     $engines[] = new \User64();
 }
