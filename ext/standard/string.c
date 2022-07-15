@@ -5737,7 +5737,7 @@ PHP_FUNCTION(str_rot13)
 }
 /* }}} */
 
-PHPAPI int php_string_shuffle(const php_random_algo *algo, php_random_status *status, char *str, zend_long len) /* {{{ */
+PHPAPI int php_binary_string_shuffle(const php_random_algo *algo, php_random_status *status, char *str, zend_long len) /* {{{ */
 {
 	int64_t n_elems, rnd_idx, n_left;
 	char temp;
@@ -5779,7 +5779,7 @@ PHP_FUNCTION(str_shuffle)
 
 	RETVAL_STRINGL(ZSTR_VAL(arg), ZSTR_LEN(arg));
 	if (Z_STRLEN_P(return_value) > 1) {
-		php_string_shuffle(
+		php_binary_string_shuffle(
 			php_random_default_algo(), 
 			php_random_default_status(), 
 			Z_STRVAL_P(return_value), 
