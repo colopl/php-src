@@ -10,7 +10,7 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Sascha Schumann <sascha@schumann.cx                         |
+   | Authors: Sascha Schumann <sascha@schumann.cx>                        |
    |          Go Kudo <g-kudo@colopl.co.jp>                               |
    +----------------------------------------------------------------------+
 */
