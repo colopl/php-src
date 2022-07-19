@@ -125,7 +125,7 @@ static inline uint32_t rand_range32(const php_random_algo *algo, php_random_stat
 			status->last_unsafe = true;
 			return 0;
 		}
-		
+
 		result = algo->generate(status);
 		total_size = status->last_generated_size;
 		if (status->last_unsafe) {
@@ -187,7 +187,7 @@ static inline uint64_t rand_range64(const php_random_algo *algo, php_random_stat
 			status->last_unsafe = true;
 			return 0;
 		}
-		
+
 		result = algo->generate(status);
 		total_size = status->last_generated_size;
 		if (status->last_unsafe) {
@@ -847,7 +847,7 @@ PHP_MINIT_FUNCTION(random)
 
 	RANDOM_G(mt19937) = php_random_status_alloc(&php_random_algo_mt19937, true);
 	RANDOM_G(mt19937_seeded) = false;
-	
+
 	return SUCCESS;
 }
 /* }}} */
@@ -862,7 +862,7 @@ PHP_MSHUTDOWN_FUNCTION(random)
 
 	php_random_status_free(RANDOM_G(combined_lcg), true);
 	RANDOM_G(combined_lcg) = NULL;
-	
+
 	php_random_status_free(RANDOM_G(mt19937), true);
 	RANDOM_G(mt19937) = NULL;
 

@@ -31,7 +31,7 @@ static inline void randomizer_common_init(php_random_randomizer *randomizer, zen
 	if (engine_object->ce->type == ZEND_INTERNAL_CLASS) {
 		/* Internal classes always php_random_engine struct */
 		php_random_engine *engine = php_random_engine_from_obj(engine_object);
-		
+
 		/* Copy engine pointers */
 		randomizer->algo = engine->algo;
 		randomizer->status = engine->status;

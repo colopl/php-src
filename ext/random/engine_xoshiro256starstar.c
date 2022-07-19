@@ -95,7 +95,7 @@ static inline void seed256(php_random_status *status, uint64_t s0, uint64_t s1, 
 static void seed(php_random_status *status, uint64_t seed)
 {
 	uint64_t s[4];
-	
+
 	s[0] = splitmix64(&seed);
 	s[1] = splitmix64(&seed);
 	s[2] = splitmix64(&seed);
@@ -215,7 +215,7 @@ PHP_METHOD(Random_Engine_Xoshiro256StarStar, __construct)
 			/* char (byte: 8 bit) * 32 = 256 bits */
 			if (ZSTR_LEN(str_seed) == 32) {
 				uint64_t t[4];
-				
+
 				/* Endianness safe copy */
 				for (uint32_t i = 0; i < 4; i++) {
 					t[i] = 0;

@@ -5781,9 +5781,9 @@ PHP_FUNCTION(str_shuffle)
 	RETVAL_STRINGL(ZSTR_VAL(arg), ZSTR_LEN(arg));
 	if (Z_STRLEN_P(return_value) > 1) {
 		php_binary_string_shuffle(
-			php_random_default_algo(), 
-			php_random_default_status(), 
-			Z_STRVAL_P(return_value), 
+			php_random_default_algo(),
+			php_random_default_status(),
+			Z_STRVAL_P(return_value),
 			Z_STRLEN_P(return_value)
 		);
 	}

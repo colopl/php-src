@@ -183,10 +183,10 @@ static inline php_random_uint128_t php_random_uint128_multiply(php_random_uint12
 
 static inline uint64_t php_random_pcgoneseq128xslrr64_rotr64(php_random_uint128_t num)
 {
-	const uint64_t 
+	const uint64_t
 		v = ((uint64_t) (num >> 64U)) ^ (uint64_t) num,
 		s = num >> 122U;
-	
+
 	return (v >> s) | (v << ((-s) & 63));
 }
 # endif

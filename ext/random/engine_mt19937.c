@@ -189,7 +189,7 @@ static bool serialize(php_random_status *status, HashTable *data)
 	zend_hash_next_index_insert(data, &t);
 	ZVAL_LONG(&t, s->mode);
 	zend_hash_next_index_insert(data, &t);
-	
+
 	return true;
 }
 
@@ -207,7 +207,7 @@ static bool unserialize(php_random_status *status, HashTable *data)
 			return false;
 		}
 	}
-	t = zend_hash_index_find(data, MT_N); 
+	t = zend_hash_index_find(data, MT_N);
 	if (!t || Z_TYPE_P(t) != IS_LONG) {
 		return false;
 	}

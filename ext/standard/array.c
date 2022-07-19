@@ -2978,7 +2978,7 @@ PHPAPI bool php_array_data_shuffle(const php_random_algo *algo, php_random_statu
 	hash->nNumUsed = n_elems;
 	hash->nInternalPointer = 0;
 	hash->nNextFreeElement = n_elems;
-	
+
 	return true;
 }
 /* }}} */
@@ -5883,7 +5883,7 @@ PHPAPI bool php_array_pick_keys(const php_random_algo *algo, php_random_status *
 		return false;
 	}
 
-	/* Make the return value an array only if we need to pass back more than one result. */	
+	/* Make the return value an array only if we need to pass back more than one result. */
 	array_init_size(retval, (uint32_t) num_req);
 	if (num_req > (num_avail >> 1)) {
 		negative_bitset = 1;
@@ -5939,11 +5939,11 @@ PHP_FUNCTION(array_rand)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (!php_array_pick_keys(
-			php_random_default_algo(), 
-			php_random_default_status(), 
-			input, 
-			num_req, 
-			return_value, 
+			php_random_default_algo(),
+			php_random_default_status(),
+			input,
+			num_req,
+			return_value,
 			false)
 	) {
 		RETURN_THROWS();
